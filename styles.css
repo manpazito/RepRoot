@@ -91,7 +91,7 @@ button:disabled { cursor: not-allowed; }
 .sidebar-footer strong { color: #e7eae4; font-size: 12px; }
 .sidebar-footer small { display: block; overflow: hidden; margin-top: 3px; color: #89938d; font-size: 9px; text-overflow: ellipsis; white-space: nowrap; }
 .icon-button { padding: 0; border: 0; color: #838983; background: transparent; font-size: 20px; }
-.nav-button { width: 100%; border: 0; text-align: left; }
+.nav-button { width: 100%; border: 0; appearance: none; color: rgba(237, 247, 243, .62); background: transparent; text-align: left; }
 
 .main-content { width: calc(100% - 248px); min-height: 100vh; margin-left: 248px; }
 .topbar { height: 74px; padding: 0 38px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--line); background: rgba(244,245,241,.9); backdrop-filter: blur(14px); position: sticky; top: 0; z-index: 10; }
