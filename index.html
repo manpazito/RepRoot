@@ -32,15 +32,15 @@
             <button class="active" type="button" id="createAccountTab">Create account</button>
             <button type="button" id="signInTab">Sign in</button>
           </div>
-          <div class="auth-heading"><p class="eyebrow" id="authEyebrow">Start from zero</p><h2 id="authTitle">Create your account</h2><p id="authSubtitle">Your profile and training history stay on this device.</p></div>
+          <div class="auth-heading"><p class="eyebrow" id="authEyebrow">Start from zero</p><h2 id="authTitle">Create your account</h2><p id="authSubtitle">One secure account for every device you train with.</p></div>
           <form id="authForm">
             <label id="nameField"><span>Full name</span><input id="accountName" type="text" autocomplete="name" placeholder="Your name" /></label>
             <label><span>Email address</span><input id="accountEmail" type="email" autocomplete="email" placeholder="you@example.com" required /></label>
-            <label><span>Password</span><input id="accountPassword" type="password" autocomplete="new-password" minlength="8" placeholder="At least 8 characters" required /></label>
+            <label><span>Password</span><input id="accountPassword" type="password" autocomplete="new-password" minlength="10" placeholder="At least 10 characters" required /></label>
             <p class="auth-error" id="authError" role="alert"></p>
             <button class="button button-primary auth-submit" type="submit"><span id="authSubmitLabel">Create account</span> →</button>
           </form>
-          <p class="local-account-note"><strong>On-device profile</strong> · This sign-in works only in this installed app or browser. It does not sync to another phone yet. Export a backup regularly.</p>
+          <p class="local-account-note"><strong>Secure cloud account</strong> · Sign in from Safari, your Home Screen app, or another device. Training remains cached for offline workouts.</p>
         </div>
       </div>
     </section>
@@ -99,7 +99,7 @@
           <button class="menu-button" id="menuButton" aria-label="Open navigation">☰</button>
           <div class="breadcrumb"><span>Training</span><b>/</b><strong id="pageCrumb">Overview</strong></div>
           <div class="top-actions">
-            <span class="live-pill"><i></i> Local data</span>
+            <span class="live-pill" id="cloudStatus" data-status="syncing"><i></i> <span id="cloudStatusLabel">Connecting…</span></span>
             <button class="button button-primary compact top-workout-button" id="topWorkoutButton" data-route-button="workout"><span>▶</span><span id="topWorkoutLabel">Open workout</span></button>
           </div>
         </header>
@@ -394,9 +394,10 @@
                 <button class="button button-primary" type="submit">Save preferences</button>
               </form>
               <section class="panel settings-panel">
-                <div class="panel-heading"><div><p class="eyebrow">Account status</p><h2>On-device profile</h2></div><span class="local-badge">Local only</span></div>
-                <p>Your profile currently lives in this installed app or browser. It cannot sign in on another phone until cloud sync is configured.</p>
+                <div class="panel-heading"><div><p class="eyebrow">Account status</p><h2>Cloud account</h2></div><span class="local-badge" id="settingsSyncBadge">Syncing…</span></div>
+                <p id="settingsSyncMessage">Saving your latest changes securely…</p>
                 <div class="data-actions">
+                  <button class="button button-primary" id="syncNowButton">Sync now</button>
                   <button class="button button-outline" id="settingsExportButton">Export full backup</button>
                   <label class="button button-outline import-button">Restore backup<input id="importBackupInput" type="file" accept="application/json,.json" /></label>
                 </div>
@@ -404,8 +405,8 @@
               </section>
               <section class="panel settings-panel partner-panel">
                 <div class="panel-heading"><div><p class="eyebrow">Partner features</p><h2>Train together, privately.</h2></div></div>
-                <p>Cloud accounts will enable partner invitations, shared routines, encouragement, and optional progress sharing. Workout history remains private by default.</p>
-                <button class="button button-outline" disabled>Cloud setup required</button>
+                <p>Your individual workout history is private. Partner invitations and opt-in routine sharing are the next cloud feature.</p>
+                <button class="button button-outline" disabled>Coming next</button>
               </section>
             </div>
           </section>

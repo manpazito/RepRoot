@@ -210,6 +210,8 @@ input[readonly] { color: #858c84; background: #f2f3ef; }
 .toast { position: fixed; z-index: 50; right: 24px; bottom: 24px; padding: 13px 17px; border-radius: 10px; color: white; background: var(--dark-slate-grey); box-shadow: 0 10px 30px rgba(40,63,59,.24); font-size: 12px; transform: translateY(20px); opacity: 0; pointer-events: none; transition: .25s ease; }.toast.show { transform: none; opacity: 1; }
 .mobile-tabbar { display: none; }
 .top-workout-button[hidden] { display: none; }
+.live-pill[data-status="syncing"] i { background: var(--willow-green); animation: pulse 1.4s infinite; }
+.live-pill[data-status="offline"] i { background: #a4aaa5; }
 
 /* Dialogs, settings, and reusable workout plans */
 .app-dialog { width: min(92vw, 680px); max-height: min(88vh, 760px); padding: 0; overflow: auto; border: 1px solid var(--line); border-radius: 20px; color: var(--ink); background: white; box-shadow: 0 28px 90px rgba(20,39,35,.32); }

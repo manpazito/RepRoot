@@ -4,7 +4,7 @@
 // Data model
 // Exercise: { id, name, primary, movement, equipment }
 // Log:      { id, date, exerciseId, muscle, sets, reps, weight, notes, createdAt }
-// All user-generated logs are persisted in localStorage under STORAGE_KEY.
+// User-generated logs are synced to Supabase and cached locally for offline use.
 // -----------------------------------------------------------------------------
 
 const STORAGE_KEY = "reproot-workout-logs-v1";
@@ -16,6 +16,12 @@ const CUSTOM_EXERCISES_KEY = "reproot-custom-exercises-v1";
 const SETTINGS_STORAGE_KEY = "reproot-settings-v1";
 const ACCOUNTS_KEY = "reproot-accounts-v1";
 const AUTH_SESSION_KEY = "reproot-auth-session-v1";
+const CLOUD_SESSION_KEY = "reproot-cloud-session-v1";
+const CLOUD_PROFILE_KEY = "reproot-cloud-profile-v1";
+const CLOUD_DIRTY_KEY = "reproot-cloud-dirty-v1";
+const LEGACY_MIGRATION_KEY = "reproot-legacy-migrated-v1";
+const SUPABASE_URL = "https://syfiwpmsoruirefeksbk.supabase.co";
+const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_wbKOPuzgRR-dRTBzto4akA_2om3H9fh";
 const MUSCLE_GROUPS = ["Chest", "Back", "Quads", "Hamstrings", "Glutes", "Shoulders", "Biceps", "Triceps", "Core", "Calves"];
 const MUSCLE_ABBR = { Chest: "CH", Back: "BK", Quads: "QD", Hamstrings: "HM", Glutes: "GL", Shoulders: "SH", Biceps: "BI", Triceps: "TR", Core: "CR", Calves: "CV" };
 
@@ -94,11 +100,12 @@ const DEFAULT_SETTINGS = { weightUnit: "lb", weeklySetTarget: 10, restSeconds: 9
 const state = {
   logs: [], cardioLogs: [], sessions: [], activeWorkout: null, routines: [], customExercises: [], settings: { ...DEFAULT_SETTINGS },
   account: null, authMode: "create", tutorialStep: 0,
-  selectedWeekStart: startOfWeek(new Date()), route: "overview", timerInterval: null, restTimerInterval: null, restTimerEnd: null
+  selectedWeekStart: startOfWeek(new Date()), route: "overview", timerInterval: null, restTimerInterval: null, restTimerEnd: null,
+  cloudSession: null, cloudSyncTimer: null, isHydrating: false, migrationPassword: null
 };
 
 const TUTORIAL_STEPS = [
-  { icon: "✦", label: "Getting started", title: "Welcome to RepRoot.", copy: "Your account begins completely empty. Add only the training you actually complete, and the dashboard will grow with you.", tip: "Your profile and records are stored in this browser. Export regular backups from the sidebar." },
+  { icon: "✦", label: "Getting started", title: "Welcome to RepRoot.", copy: "Your account begins completely empty. Add only the training you actually complete, and the dashboard will grow with you.", tip: "Your training syncs securely to your account and remains cached on this device for offline use." },
   { icon: "▶", label: "Workout mode", title: "Track sets while you train.", copy: "Choose a routine or begin with any exercise. Record weight, reps, set type, and reps in reserve after each completed set.", tip: "Workout navigation never pauses your session. Pause, resume, and finish controls stay inside Workout Mode." },
   { icon: "◐", label: "Muscle targeting", title: "Watch your workout build.", copy: "Working sets add full credit to the primary muscle and partial credit to secondary muscles. Warm-up sets stay in your history without inflating weekly volume.", tip: "Finish & save preserves every individual set for accurate progression." },
   { icon: "♥", label: "Cardio & strength", title: "Log every kind of effort.", copy: "Use Strength for individual machine or free-weight entries. Use Cardio for running, cycling, swimming, walking, rowing, hiking, elliptical, and stairs.", tip: "Cardio automatically calculates pace using the correct activity unit." },
@@ -160,19 +167,25 @@ function loadLogs() {
   try { state.settings = { ...DEFAULT_SETTINGS, ...(JSON.parse(localStorage.getItem(accountStorageKey(SETTINGS_STORAGE_KEY))) || {}) }; } catch { state.settings = { ...DEFAULT_SETTINGS }; }
   saveRoutines();
 }
-function saveLogs() { localStorage.setItem(accountStorageKey(STORAGE_KEY), JSON.stringify(state.logs)); }
-function saveCardioLogs() { localStorage.setItem(accountStorageKey(CARDIO_STORAGE_KEY), JSON.stringify(state.cardioLogs)); }
-function saveSessions() { localStorage.setItem(accountStorageKey(SESSION_STORAGE_KEY), JSON.stringify(state.sessions)); }
-function saveRoutines() { localStorage.setItem(accountStorageKey(ROUTINES_STORAGE_KEY), JSON.stringify(state.routines)); }
-function saveCustomExercises() { localStorage.setItem(accountStorageKey(CUSTOM_EXERCISES_KEY), JSON.stringify(state.customExercises)); }
-function saveSettings() { localStorage.setItem(accountStorageKey(SETTINGS_STORAGE_KEY), JSON.stringify(state.settings)); }
+function markCloudDirty() {
+  if (!state.account || state.isHydrating) return;
+  localStorage.setItem(`${CLOUD_DIRTY_KEY}:${state.account.id}`, "true");
+  scheduleCloudSync();
+}
+function saveLogs() { localStorage.setItem(accountStorageKey(STORAGE_KEY), JSON.stringify(state.logs)); markCloudDirty(); }
+function saveCardioLogs() { localStorage.setItem(accountStorageKey(CARDIO_STORAGE_KEY), JSON.stringify(state.cardioLogs)); markCloudDirty(); }
+function saveSessions() { localStorage.setItem(accountStorageKey(SESSION_STORAGE_KEY), JSON.stringify(state.sessions)); markCloudDirty(); }
+function saveRoutines() { localStorage.setItem(accountStorageKey(ROUTINES_STORAGE_KEY), JSON.stringify(state.routines)); markCloudDirty(); }
+function saveCustomExercises() { localStorage.setItem(accountStorageKey(CUSTOM_EXERCISES_KEY), JSON.stringify(state.customExercises)); markCloudDirty(); }
+function saveSettings() { localStorage.setItem(accountStorageKey(SETTINGS_STORAGE_KEY), JSON.stringify(state.settings)); markCloudDirty(); }
 function saveActiveWorkout() {
   const key = accountStorageKey(ACTIVE_WORKOUT_KEY);
   if (state.activeWorkout) localStorage.setItem(key, JSON.stringify(state.activeWorkout));
   else localStorage.removeItem(key);
+  markCloudDirty();
 }
 
-function init() {
+async function init() {
   // Remove the original unscoped demo store. All current data is account-scoped.
   [STORAGE_KEY, CARDIO_STORAGE_KEY, SESSION_STORAGE_KEY, ACTIVE_WORKOUT_KEY, ROUTINES_STORAGE_KEY, CUSTOM_EXERCISES_KEY, SETTINGS_STORAGE_KEY].forEach(key => localStorage.removeItem(key));
   populateSelects();
@@ -182,27 +195,216 @@ function init() {
   syncExerciseFields();
   syncCardioFields();
   syncLiveExercise();
-  restoreAuthSession();
+  window.addEventListener("online", () => { setCloudStatus("syncing"); syncFromCloud().catch(() => setCloudStatus("offline")); });
+  window.addEventListener("offline", () => setCloudStatus("offline"));
+  await restoreAuthSession();
 }
 
 // -----------------------------------------------------------------------------
-// On-device accounts
-// Passwords are derived with PBKDF2 and never stored in plaintext. Training
-// records are namespaced by account ID. A hosted production deployment can
-// replace this layer with server authentication without changing log schemas.
+// Supabase cloud accounts with an on-device offline cache. The previous PBKDF2
+// account records are read only once as a migration source and are never sent
+// anywhere except the authenticated user's own training snapshot.
 // -----------------------------------------------------------------------------
 
 function getAccounts() {
   try { const accounts = JSON.parse(localStorage.getItem(ACCOUNTS_KEY)); return Array.isArray(accounts) ? accounts : []; }
   catch { return []; }
 }
-function saveAccounts(accounts) { localStorage.setItem(ACCOUNTS_KEY, JSON.stringify(accounts)); }
 function bytesToBase64(bytes) { return btoa(String.fromCharCode(...bytes)); }
 function base64ToBytes(value) { return Uint8Array.from(atob(value), character => character.charCodeAt(0)); }
-async function derivePassword(password, salt) {
+async function deriveLegacyPassword(password, salt) {
   const material = await crypto.subtle.importKey("raw", new TextEncoder().encode(password), "PBKDF2", false, ["deriveBits"]);
   const bits = await crypto.subtle.deriveBits({ name: "PBKDF2", salt, iterations: 150000, hash: "SHA-256" }, material, 256);
   return bytesToBase64(new Uint8Array(bits));
+}
+
+function cloudProfileKey(userId) { return `${CLOUD_PROFILE_KEY}:${userId}`; }
+function accountFromSession(session) {
+  let localProfile = {};
+  try { localProfile = JSON.parse(localStorage.getItem(cloudProfileKey(session.user.id))) || {}; } catch { localProfile = {}; }
+  const name = session.user.user_metadata?.name || localProfile.name || session.user.email?.split("@")[0] || "RepRoot athlete";
+  return { id: session.user.id, email: session.user.email, name, tutorialComplete: Boolean(localProfile.tutorialComplete) };
+}
+
+function normalizeCloudSession(session) {
+  if (!session?.access_token || !session?.refresh_token || !session?.user) return null;
+  return { ...session, expires_at: Number(session.expires_at) || Math.floor(Date.now() / 1000) + Number(session.expires_in || 3600) };
+}
+function storeCloudSession(session) {
+  state.cloudSession = normalizeCloudSession(session);
+  if (state.cloudSession) localStorage.setItem(CLOUD_SESSION_KEY, JSON.stringify(state.cloudSession));
+  else localStorage.removeItem(CLOUD_SESSION_KEY);
+}
+function cloudErrorMessage(payload, fallback = "Unable to reach your account.") {
+  const message = payload?.msg || payload?.message || payload?.error_description || payload?.error;
+  if (message === "Invalid login credentials") return "Incorrect email or password.";
+  if (message === "Email not confirmed") return "Confirm your email first, then sign in again.";
+  if (message?.toLowerCase().includes("already registered")) return "An account with this email already exists. Choose Sign in.";
+  return message || fallback;
+}
+async function parseCloudResponse(response, fallback) {
+  let payload = null;
+  try { payload = await response.json(); } catch { payload = null; }
+  if (!response.ok) throw new Error(cloudErrorMessage(payload, fallback));
+  return payload;
+}
+async function refreshCloudSession() {
+  const refreshToken = state.cloudSession?.refresh_token;
+  if (!refreshToken) throw new Error("Your session has expired. Sign in again.");
+  const response = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=refresh_token`, {
+    method: "POST", headers: { apikey: SUPABASE_PUBLISHABLE_KEY, "Content-Type": "application/json" },
+    body: JSON.stringify({ refresh_token: refreshToken })
+  });
+  const session = await parseCloudResponse(response, "Unable to refresh your session.");
+  storeCloudSession(session);
+  return state.cloudSession;
+}
+async function authenticatedCloudFetch(path, options = {}, retry = true) {
+  if (!state.cloudSession) throw new Error("Sign in to sync your training.");
+  if (state.cloudSession.expires_at * 1000 < Date.now() + 60000) await refreshCloudSession();
+  const response = await fetch(`${SUPABASE_URL}${path}`, {
+    ...options,
+    headers: { apikey: SUPABASE_PUBLISHABLE_KEY, Authorization: `Bearer ${state.cloudSession.access_token}`, ...(options.headers || {}) }
+  });
+  if (response.status === 401 && retry) { await refreshCloudSession(); return authenticatedCloudFetch(path, options, false); }
+  return response;
+}
+
+function readAccountValue(baseKey, accountId, fallback) {
+  try { const value = JSON.parse(localStorage.getItem(`${baseKey}:${accountId}`)); return value ?? fallback; }
+  catch { return fallback; }
+}
+function trainingPayloadForAccount(accountId) {
+  const routines = readAccountValue(ROUTINES_STORAGE_KEY, accountId, []);
+  return {
+    version: 4, savedAt: new Date().toISOString(),
+    settings: { ...DEFAULT_SETTINGS, ...readAccountValue(SETTINGS_STORAGE_KEY, accountId, {}) },
+    customExercises: readAccountValue(CUSTOM_EXERCISES_KEY, accountId, []),
+    routines: Array.isArray(routines) && routines.length ? routines : DEFAULT_ROUTINES.map(routine => ({ ...routine })),
+    strengthLogs: readAccountValue(STORAGE_KEY, accountId, []),
+    cardioLogs: readAccountValue(CARDIO_STORAGE_KEY, accountId, []),
+    workoutSessions: readAccountValue(SESSION_STORAGE_KEY, accountId, []),
+    activeWorkout: readAccountValue(ACTIVE_WORKOUT_KEY, accountId, null)
+  };
+}
+function currentTrainingPayload() {
+  return {
+    version: 4, savedAt: new Date().toISOString(), settings: state.settings,
+    customExercises: state.customExercises, routines: state.routines,
+    strengthLogs: state.logs, cardioLogs: state.cardioLogs, workoutSessions: state.sessions,
+    activeWorkout: state.activeWorkout
+  };
+}
+function payloadHasTraining(payload) {
+  return [payload?.strengthLogs, payload?.cardioLogs, payload?.workoutSessions, payload?.customExercises].some(items => Array.isArray(items) && items.length) || Boolean(payload?.activeWorkout);
+}
+function mergeRecords(...groups) {
+  const records = new Map();
+  groups.flat().filter(Boolean).forEach(record => records.set(record.id || cryptoId(), record));
+  return [...records.values()];
+}
+function mergeTrainingPayload(primary, addition) {
+  if (!primary) return addition;
+  if (!addition) return primary;
+  return {
+    version: 4, savedAt: new Date().toISOString(), settings: primary.settings || addition.settings || { ...DEFAULT_SETTINGS },
+    customExercises: mergeRecords(addition.customExercises || [], primary.customExercises || []),
+    routines: mergeRecords(addition.routines || [], primary.routines || []),
+    strengthLogs: mergeRecords(addition.strengthLogs || [], primary.strengthLogs || []),
+    cardioLogs: mergeRecords(addition.cardioLogs || [], primary.cardioLogs || []),
+    workoutSessions: mergeRecords(addition.workoutSessions || [], primary.workoutSessions || []),
+    activeWorkout: primary.activeWorkout || addition.activeWorkout || null
+  };
+}
+function applyTrainingPayload(payload) {
+  const custom = Array.isArray(payload?.customExercises) ? payload.customExercises : [];
+  const validExerciseIds = new Set([...EXERCISES.map(exercise => exercise.id), ...custom.map(exercise => exercise.id)]);
+  state.customExercises = custom;
+  state.logs = Array.isArray(payload?.strengthLogs) ? payload.strengthLogs.filter(log => validExerciseIds.has(log.exerciseId)) : [];
+  state.cardioLogs = Array.isArray(payload?.cardioLogs) ? payload.cardioLogs.filter(log => cardioById(log.activityId)) : [];
+  state.sessions = Array.isArray(payload?.workoutSessions) ? payload.workoutSessions : [];
+  state.routines = Array.isArray(payload?.routines) && payload.routines.length ? payload.routines.map(routine => ({ ...routine, exerciseIds: (routine.exerciseIds || []).filter(id => validExerciseIds.has(id)) })) : DEFAULT_ROUTINES.map(routine => ({ ...routine }));
+  const settings = payload?.settings || {};
+  state.settings = {
+    weightUnit: settings.weightUnit === "kg" ? "kg" : "lb",
+    weeklySetTarget: Math.min(30, Math.max(4, Number(settings.weeklySetTarget) || DEFAULT_SETTINGS.weeklySetTarget)),
+    restSeconds: [60, 90, 120, 180].includes(Number(settings.restSeconds)) ? Number(settings.restSeconds) : DEFAULT_SETTINGS.restSeconds
+  };
+  state.activeWorkout = payload?.activeWorkout || null;
+}
+function persistTrainingCache() {
+  const previousHydrating = state.isHydrating; state.isHydrating = true;
+  saveLogs(); saveCardioLogs(); saveSessions(); saveRoutines(); saveCustomExercises(); saveSettings(); saveActiveWorkout();
+  state.isHydrating = previousHydrating;
+}
+async function verifiedLegacyPayload() {
+  if (!state.migrationPassword || !crypto.subtle) return null;
+  const legacy = getAccounts().find(account => account.email === state.account.email);
+  if (!legacy || localStorage.getItem(`${LEGACY_MIGRATION_KEY}:${state.account.id}`) === "true") return null;
+  try {
+    const hash = await deriveLegacyPassword(state.migrationPassword, base64ToBytes(legacy.passwordSalt));
+    return hash === legacy.passwordHash ? trainingPayloadForAccount(legacy.id) : null;
+  } catch { return null; }
+}
+function setCloudStatus(status) {
+  const label = document.querySelector("#cloudStatusLabel");
+  const pill = document.querySelector("#cloudStatus");
+  const badge = document.querySelector("#settingsSyncBadge");
+  const message = document.querySelector("#settingsSyncMessage");
+  const copy = { synced: "Synced", syncing: "Syncing…", offline: "Offline cache" }[status] || "Cloud account";
+  if (label) label.textContent = copy;
+  if (pill) pill.dataset.status = status;
+  if (badge) badge.textContent = copy;
+  if (message) message.textContent = status === "synced" ? "Your training is backed up and available anywhere you sign in." : status === "syncing" ? "Saving your latest changes securely…" : "Changes stay on this device and will sync when the connection returns.";
+}
+function scheduleCloudSync() {
+  if (!state.account || !state.cloudSession || state.isHydrating) return;
+  clearTimeout(state.cloudSyncTimer); setCloudStatus(navigator.onLine ? "syncing" : "offline");
+  if (!navigator.onLine) return;
+  state.cloudSyncTimer = setTimeout(() => syncToCloud().catch(() => setCloudStatus("offline")), 700);
+}
+async function syncToCloud() {
+  if (!state.account || !navigator.onLine) { setCloudStatus("offline"); return; }
+  setCloudStatus("syncing");
+  const payload = currentTrainingPayload();
+  const response = await authenticatedCloudFetch("/rest/v1/training_snapshots?on_conflict=user_id", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Prefer: "resolution=merge-duplicates,return=minimal" },
+    body: JSON.stringify({ user_id: state.account.id, payload, schema_version: 4, updated_at: new Date().toISOString() })
+  });
+  if (!response.ok) await parseCloudResponse(response, "Unable to sync your training.");
+  localStorage.removeItem(`${CLOUD_DIRTY_KEY}:${state.account.id}`);
+  setCloudStatus("synced");
+}
+async function syncFromCloud() {
+  if (!state.account || !state.cloudSession || !navigator.onLine) { setCloudStatus("offline"); return; }
+  setCloudStatus("syncing");
+  const response = await authenticatedCloudFetch(`/rest/v1/training_snapshots?select=payload,updated_at&user_id=eq.${encodeURIComponent(state.account.id)}&limit=1`);
+  const rows = await parseCloudResponse(response, "Unable to load your synced training.");
+  const remote = rows?.[0]?.payload || null;
+  const local = currentTrainingPayload();
+  const dirty = localStorage.getItem(`${CLOUD_DIRTY_KEY}:${state.account.id}`) === "true";
+  const legacy = await verifiedLegacyPayload();
+  let chosen = remote && !dirty ? remote : local;
+  if (legacy && payloadHasTraining(legacy)) chosen = mergeTrainingPayload(chosen, legacy);
+  state.isHydrating = true; applyTrainingPayload(chosen); persistTrainingCache(); state.isHydrating = false;
+  if (legacy) localStorage.setItem(`${LEGACY_MIGRATION_KEY}:${state.account.id}`, "true");
+  state.migrationPassword = null;
+  populateSelects(); applySettingsToUI(); renderAll();
+  if (!remote || dirty || legacy) await syncToCloud();
+  else setCloudStatus("synced");
+}
+
+async function syncNow() {
+  const button = document.querySelector("#syncNowButton");
+  button.disabled = true;
+  try {
+    await syncFromCloud();
+    showToast(navigator.onLine ? "Training synced." : "You're offline. Changes will sync when you reconnect.");
+  } catch (error) {
+    setCloudStatus("offline");
+    showToast(error.message || "Unable to sync right now.");
+  } finally { button.disabled = false; }
 }
 
 function setAuthMode(mode) {
@@ -215,7 +417,7 @@ function setAuthMode(mode) {
   document.querySelector("#accountPassword").autocomplete = creating ? "new-password" : "current-password";
   document.querySelector("#authEyebrow").textContent = creating ? "Start from zero" : "Welcome back";
   document.querySelector("#authTitle").textContent = creating ? "Create your account" : "Sign in to RepRoot";
-  document.querySelector("#authSubtitle").textContent = creating ? "Your profile begins with zero training data." : "Continue with your training history on this device.";
+  document.querySelector("#authSubtitle").textContent = creating ? "Create one account for every device you train with." : "Continue with your synced training history.";
   document.querySelector("#authSubmitLabel").textContent = creating ? "Create account" : "Sign in";
   document.querySelector("#authError").textContent = "";
 }
@@ -229,42 +431,55 @@ async function handleAuthSubmit(event) {
   const password = document.querySelector("#accountPassword").value;
   const error = document.querySelector("#authError");
   error.textContent = "";
-  if (!crypto.subtle) { error.textContent = "Secure account access requires HTTPS or localhost."; return; }
-  if (password.length < 8) { error.textContent = "Use a password with at least 8 characters."; return; }
+  if (password.length < 10) { error.textContent = "Use a password with at least 10 characters."; return; }
   submit.disabled = true;
   try {
-    const accounts = getAccounts();
+    let response;
     if (state.authMode === "create") {
       if (name.length < 2) throw new Error("Enter your full name.");
-      if (accounts.some(account => account.email === email)) throw new Error("An account with this email already exists on this device.");
-      const salt = crypto.getRandomValues(new Uint8Array(16));
-      const account = { id: cryptoId(), name, email, passwordSalt: bytesToBase64(salt), passwordHash: await derivePassword(password, salt), tutorialComplete: false, createdAt: Date.now() };
-      accounts.push(account); saveAccounts(accounts); state.account = account;
-      localStorage.setItem(AUTH_SESSION_KEY, account.id);
-      enterAuthenticatedApp(true);
+      response = await fetch(`${SUPABASE_URL}/auth/v1/signup`, {
+        method: "POST", headers: { apikey: SUPABASE_PUBLISHABLE_KEY, "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password, data: { name } })
+      });
+      const session = await parseCloudResponse(response, "Unable to create your account.");
+      if (!session.access_token) {
+        setAuthMode("signin");
+        error.textContent = "Check your email to confirm the account, then return here and sign in.";
+        return;
+      }
+      storeCloudSession(session); state.account = accountFromSession(state.cloudSession); state.migrationPassword = password;
+      await enterAuthenticatedApp(true);
     } else {
-      const account = accounts.find(item => item.email === email);
-      if (!account) throw new Error("No account with that email exists on this device.");
-      const passwordHash = await derivePassword(password, base64ToBytes(account.passwordSalt));
-      if (passwordHash !== account.passwordHash) throw new Error("Incorrect password. Please try again.");
-      state.account = account; localStorage.setItem(AUTH_SESSION_KEY, account.id);
-      enterAuthenticatedApp(false);
+      response = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=password`, {
+        method: "POST", headers: { apikey: SUPABASE_PUBLISHABLE_KEY, "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password })
+      });
+      const session = await parseCloudResponse(response, "Unable to sign in.");
+      storeCloudSession(session); state.account = accountFromSession(state.cloudSession); state.migrationPassword = password;
+      await enterAuthenticatedApp(false);
     }
     form.reset();
   } catch (authError) { error.textContent = authError.message || "Unable to access this account."; }
   finally { submit.disabled = false; }
 }
 
-function restoreAuthSession() {
-  const accounts = getAccounts();
-  const accountId = localStorage.getItem(AUTH_SESSION_KEY);
-  const account = accounts.find(item => item.id === accountId);
-  if (account) { state.account = account; enterAuthenticatedApp(false); }
-  else { localStorage.removeItem(AUTH_SESSION_KEY); setAuthMode(accounts.length ? "signin" : "create"); }
+async function restoreAuthSession() {
+  let session = null;
+  try { session = normalizeCloudSession(JSON.parse(localStorage.getItem(CLOUD_SESSION_KEY))); } catch { session = null; }
+  if (!session) { setAuthMode("create"); return; }
+  storeCloudSession(session);
+  if (navigator.onLine && session.expires_at * 1000 < Date.now() + 60000) {
+    try { await refreshCloudSession(); }
+    catch { storeCloudSession(null); setAuthMode("signin"); return; }
+  }
+  state.account = accountFromSession(state.cloudSession);
+  await enterAuthenticatedApp(false);
 }
 
-function enterAuthenticatedApp(isNewAccount) {
+async function enterAuthenticatedApp(isNewAccount) {
+  state.isHydrating = true;
   loadLogs();
+  state.isHydrating = false;
   populateSelects();
   applySettingsToUI();
   document.body.classList.remove("auth-locked");
@@ -276,23 +491,30 @@ function enterAuthenticatedApp(isNewAccount) {
   state.selectedWeekStart = startOfWeek(new Date());
   routeTo(location.hash.slice(1) || "overview", false);
   renderAll(); startTimerLoop();
+  try { await syncFromCloud(); } catch { setCloudStatus("offline"); }
   if (isNewAccount || !state.account.tutorialComplete) setTimeout(() => openTutorial(0), 250);
 }
 
-function signOut() {
-  localStorage.removeItem(AUTH_SESSION_KEY);
+async function signOut() {
+  const accessToken = state.cloudSession?.access_token;
+  clearTimeout(state.cloudSyncTimer);
+  if (localStorage.getItem(`${CLOUD_DIRTY_KEY}:${state.account?.id}`) === "true") {
+    try { await syncToCloud(); } catch { /* The local cache remains available for the next sign-in. */ }
+  }
+  if (accessToken && navigator.onLine) fetch(`${SUPABASE_URL}/auth/v1/logout`, { method: "POST", headers: { apikey: SUPABASE_PUBLISHABLE_KEY, Authorization: `Bearer ${accessToken}` } }).catch(() => {});
+  localStorage.removeItem(AUTH_SESSION_KEY); storeCloudSession(null);
   clearInterval(state.timerInterval); clearInterval(state.restTimerInterval);
   state.account = null; state.logs = []; state.cardioLogs = []; state.sessions = []; state.activeWorkout = null; state.routines = []; state.customExercises = []; state.settings = { ...DEFAULT_SETTINGS };
   document.querySelector("#tutorialOverlay").hidden = true;
   document.body.classList.add("auth-locked");
-  setAuthMode(getAccounts().length ? "signin" : "create");
+  setAuthMode("signin");
   document.querySelector("#accountPassword").value = "";
 }
 
 function updateCurrentAccount(updates) {
   if (!state.account) return;
   Object.assign(state.account, updates);
-  saveAccounts(getAccounts().map(account => account.id === state.account.id ? state.account : account));
+  localStorage.setItem(cloudProfileKey(state.account.id), JSON.stringify({ name: state.account.name, tutorialComplete: state.account.tutorialComplete }));
 }
 
 function openTutorial(step = 0) {
@@ -382,6 +604,7 @@ function bindEvents() {
   document.querySelector("#newExerciseButton").addEventListener("click", () => document.querySelector("#exerciseDialog").showModal());
   document.querySelector("#customExerciseForm").addEventListener("submit", saveCustomExercise);
   document.querySelector("#settingsForm").addEventListener("submit", savePreferences);
+  document.querySelector("#syncNowButton").addEventListener("click", syncNow);
   document.querySelector("#settingsExportButton").addEventListener("click", exportJSON);
   document.querySelector("#importBackupInput").addEventListener("change", importBackup);
   document.querySelectorAll("[data-close-dialog]").forEach(button => button.addEventListener("click", () => document.querySelector(`#${button.dataset.closeDialog}`).close()));
@@ -1002,10 +1225,8 @@ function downloadFile(filename, content, type) {
 }
 function exportJSON() {
   const backup = {
-    version: 4, exportedAt: new Date().toISOString(),
+    ...currentTrainingPayload(), exportedAt: new Date().toISOString(),
     profile: { name: state.account.name, email: state.account.email },
-    settings: state.settings, customExercises: state.customExercises, routines: state.routines,
-    strengthLogs: state.logs, cardioLogs: state.cardioLogs, workoutSessions: state.sessions
   };
   downloadFile(`reproot-backup-${toISODate(new Date())}.json`, JSON.stringify(backup, null, 2), "application/json");
   showToast("Full training backup exported.");
@@ -1041,7 +1262,7 @@ async function importBackup(event) {
       weeklySetTarget: Math.min(30, Math.max(4, Number(importedSettings.weeklySetTarget) || DEFAULT_SETTINGS.weeklySetTarget)),
       restSeconds: [60, 90, 120, 180].includes(Number(importedSettings.restSeconds)) ? Number(importedSettings.restSeconds) : DEFAULT_SETTINGS.restSeconds
     };
-    state.activeWorkout = null;
+    state.activeWorkout = backup.activeWorkout || null;
     saveLogs(); saveCardioLogs(); saveSessions(); saveRoutines(); saveCustomExercises(); saveSettings(); saveActiveWorkout();
     populateSelects(); applySettingsToUI(); renderAll();
     showToast("Backup restored successfully.");

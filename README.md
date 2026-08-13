@@ -25,15 +25,15 @@ The manifest, Apple touch icon, offline shell, safe-area navigation, and phone-s
 
 ## Account behavior
 
-Accounts currently live only in the browser or installed app where they were created. Passwords are derived with PBKDF2 and never stored as plain text, and each local profile has isolated data. Sign-out and sign-in work on the same browser and survive reloads.
+RepRoot uses Supabase email/password authentication and a row-level-secured training snapshot. The same account works in Safari, an iPhone Home Screen installation, and other devices. RepRoot sends the password directly to Supabase over HTTPS and does not store it; Supabase stores its protected representation.
 
-This also means an account created on a laptop will not exist automatically on a phone, and you and your partner cannot share routines across devices yet. Use **Settings & backup → Export full backup** regularly. A JSON backup can be restored into another RepRoot installation without importing any password.
+Training is cached locally after sign-in, so an interrupted connection does not stop an active workout. Local changes are uploaded when connectivity returns. **Settings & backup** still provides a portable JSON export independent of the cloud provider.
 
-The optional, row-level-secured Supabase foundation for real multi-device auth and partner links is documented in [`supabase/README.md`](supabase/README.md). It still needs a Supabase project URL and publishable key before the app can safely switch from local accounts.
+The first cloud login checks for a matching legacy on-device account. When the legacy password matches the cloud password, its training is merged into the authenticated snapshot without deleting the original local copy. A JSON export/import remains the fallback for accounts using different passwords.
 
 ## Training workflow
 
-1. Create an on-device account with a password of at least eight characters.
+1. Create a cloud account with a password of at least 10 characters.
 2. Open **Workout**, choose Push, Pull, Legs, Full body, or create your own routine.
 3. Log each completed set with its weight, reps, warm-up/working type, and reps in reserve. The rest timer starts automatically and the latest performance is shown before the next set.
 4. Use **Finish & save** to preserve every individual set. Warm-ups remain in the session but do not inflate working-set volume.
@@ -56,7 +56,7 @@ Weights are normalized to pounds internally so switching display units does not 
 
 - `index.html` — app structure and accessible controls
 - `styles.css` — responsive UI and mobile workout layout
-- `app.js` — local auth, storage, training calculations, and interaction logic
+- `app.js` — Supabase auth/sync, offline caching, training calculations, and interaction logic
 - `service-worker.js` / `manifest.webmanifest` — installable offline PWA shell
 - `.github/workflows/pages.yml` — static phone deployment
-- `supabase/schema.sql` — optional hosted-data schema with row-level security
+- `supabase/schema.sql` — hosted-data schema with row-level security

@@ -1,6 +1,5 @@
--- Optional hosted backend foundation for multi-device accounts and partner features.
--- Run in a new Supabase project's SQL editor. The current app remains local-only
--- until its auth/storage adapter is connected with that project's publishable key.
+-- Hosted backend for multi-device RepRoot accounts and future partner features.
+-- Run this file in the connected Supabase project's SQL editor before deploying.
 
 create table if not exists public.profiles (
   id uuid primary key references auth.users(id) on delete cascade,
