@@ -46,7 +46,7 @@
     </section>
 
     <div class="app-shell">
-      <aside class="sidebar" aria-label="Main navigation">
+      <aside class="sidebar" id="mainSidebar" aria-label="Main navigation">
         <a class="brand" href="#overview" data-route="overview" aria-label="RepRoot home">
           <span class="brand-mark" aria-hidden="true"><i></i><i></i><i></i></span>
           <span>REPROOT</span>
@@ -98,7 +98,7 @@
 
       <main class="main-content">
         <header class="topbar">
-          <button class="menu-button" id="menuButton" aria-label="Open navigation">☰</button>
+          <button class="menu-button" id="menuButton" aria-label="Open navigation" aria-controls="mainSidebar" aria-expanded="false">☰</button>
           <div class="breadcrumb"><span>Training</span><b>/</b><strong id="pageCrumb">Overview</strong></div>
           <div class="top-actions">
             <span class="live-pill" id="cloudStatus" data-status="syncing"><i></i> <span id="cloudStatusLabel">Connecting…</span></span>

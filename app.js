@@ -554,6 +554,7 @@ async function enterAuthenticatedApp(isNewAccount) {
 }
 
 async function signOut() {
+  setSidebarOpen(false);
   const accessToken = state.cloudSession?.access_token;
   clearTimeout(state.cloudSyncTimer);
   if (localStorage.getItem(`${CLOUD_DIRTY_KEY}:${state.account?.id}`) === "true") {
@@ -713,12 +714,18 @@ function openRoutineDialog() {
   document.querySelector("#routineDialog").showModal();
 }
 
+function setSidebarOpen(isOpen) {
+  document.querySelector(".sidebar").classList.toggle("open", isOpen);
+  document.body.classList.toggle("sidebar-open", isOpen);
+  document.querySelector("#menuButton").setAttribute("aria-expanded", String(isOpen));
+}
+
 function bindEvents() {
   document.querySelectorAll("[data-route]").forEach(item => item.addEventListener("click", event => { event.preventDefault(); routeTo(item.dataset.route); }));
   document.querySelectorAll("[data-route-button]").forEach(item => item.addEventListener("click", () => routeTo(item.dataset.routeButton)));
   document.querySelectorAll("[data-start-workout]").forEach(item => item.addEventListener("click", startBlankWorkout));
   window.addEventListener("hashchange", () => routeTo(location.hash.slice(1) || "overview", false));
-  document.querySelector("#menuButton").addEventListener("click", () => document.querySelector(".sidebar").classList.toggle("open"));
+  document.querySelector("#menuButton").addEventListener("click", () => setSidebarOpen(!document.querySelector(".sidebar").classList.contains("open")));
   document.querySelector("#previousWeek").addEventListener("click", () => changeWeek(-7));
   document.querySelector("#nextWeek").addEventListener("click", () => changeWeek(7));
   document.querySelector("#logExercise").addEventListener("change", syncExerciseFields);
@@ -787,7 +794,7 @@ function routeTo(route, updateHash = true) {
   document.querySelector("#pageCrumb").textContent = ({ overview: "Overview", log: "Strength training", cardio: "Cardio", workout: "Workout mode", exercises: "Exercise database", progress: "Progress", settings: "Settings & backup" })[route];
   document.querySelectorAll(".mobile-tabbar button").forEach(item => item.classList.toggle("active", item.dataset.routeButton === route));
   document.querySelector("#topWorkoutButton").hidden = route === "workout";
-  document.querySelector(".sidebar").classList.remove("open");
+  setSidebarOpen(false);
   if (updateHash) history.pushState(null, "", `#${route}`);
   window.scrollTo({ top: 0, behavior: "smooth" });
   if (route === "progress") renderProgress();
