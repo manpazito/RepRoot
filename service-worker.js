@@ -1,4 +1,4 @@
-const CACHE_NAME = "reproot-shell-v12";
+const CACHE_NAME = "reproot-shell-v13";
 const APP_SHELL = ["./", "./index.html", "./styles.css", "./app.js", "./manifest.webmanifest", "./icon.svg", "./icon-180.png", "./icon-192.png", "./icon-512.png", "./dumbell-fitness-svgrepo-com.svg", "./home-alt-svgrepo-com.svg"];
 
 self.addEventListener("install", event => {

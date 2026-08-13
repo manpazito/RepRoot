@@ -848,10 +848,53 @@ function renderOverview() {
   const maxDaily = Math.max(...dailyVolumes, 1);
   document.querySelector("#volumeBars").innerHTML = dailyVolumes.map(volume => `<i style="height:${Math.max(3, volume / maxDaily * 31)}px"></i>`).join("");
 
+  renderWeeklyBodyMap(logs);
   renderMuscleGrid(logs);
   renderRecentSessions(logs);
   renderInsight(logs);
   document.querySelector("#recentPrs").textContent = countRecentPRs();
+}
+
+function weeklyMuscleSets(logs) {
+  return Object.fromEntries(MUSCLE_GROUPS.map(group => [group, logs.reduce((sum, log) => sum + muscleCredit(log, group), 0)]));
+}
+
+function weeklyHeatLevel(sets) {
+  if (!sets) return 0;
+  const ratio = sets / state.settings.weeklySetTarget;
+  if (ratio < 0.25) return 1;
+  if (ratio < 0.5) return 2;
+  if (ratio < 1) return 3;
+  if (ratio < 1.5) return 4;
+  return 5;
+}
+
+function renderWeeklyBodyMap(logs) {
+  const counts = weeklyMuscleSets(logs);
+  const ranked = Object.entries(counts).filter(([, sets]) => sets > 0).sort((a, b) => b[1] - a[1]);
+  document.querySelectorAll("[data-week-muscle]").forEach(zone => {
+    const group = zone.dataset.weekMuscle;
+    const sets = counts[group] || 0;
+    const formattedSets = Number(sets.toFixed(1));
+    const label = `${group}: ${formattedSets} credited working set${formattedSets === 1 ? "" : "s"} this week`;
+    zone.dataset.level = weeklyHeatLevel(sets);
+    zone.setAttribute("aria-label", label);
+    zone.querySelector("title").textContent = label;
+  });
+
+  const title = document.querySelector("#bodyHeatmapTitle");
+  const copy = document.querySelector("#bodyHeatmapCopy");
+  if (!ranked.length) {
+    title.textContent = "Your week is a clean slate.";
+    copy.textContent = "Log working sets and the muscle map will build with every workout.";
+  } else {
+    const [leadingGroup, leadingSets] = ranked[0];
+    title.textContent = `${leadingGroup} leads your week.`;
+    copy.textContent = `${Number(leadingSets.toFixed(1))} credited sets landed there. Color intensity is scaled against your ${state.settings.weeklySetTarget}-set weekly target.`;
+  }
+  document.querySelector("#heatmapSummary").innerHTML = ranked.length
+    ? ranked.slice(0, 4).map(([group, sets]) => `<span>${group} <strong>${Number(sets.toFixed(1))}</strong></span>`).join("")
+    : `<span>No working sets yet</span>`;
 }
 
 function recoveryFor(group, weeklySets) {
