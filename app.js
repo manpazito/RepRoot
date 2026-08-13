@@ -128,9 +128,11 @@ const DEFAULT_ROUTINES = [
 ];
 
 const DEFAULT_SETTINGS = { weightUnit: "lb", weeklySetTarget: 10, restSeconds: 90 };
+const DEFAULT_PROFILE = { displayName: "", bio: "", favoriteExerciseId: "", photoDataUrl: "" };
 
 const state = {
   logs: [], cardioLogs: [], sessions: [], activeWorkout: null, routines: [], customExercises: [], settings: { ...DEFAULT_SETTINGS },
+  profile: { ...DEFAULT_PROFILE },
   account: null, authMode: "create", tutorialStep: 0,
   selectedWeekStart: startOfWeek(new Date()), route: "overview", timerInterval: null, restTimerInterval: null, restTimerEnd: null,
   cloudSession: null, cloudSyncTimer: null, isHydrating: false, migrationPassword: null,
@@ -181,6 +183,15 @@ function escapeHTML(value = "") { const element = document.createElement("div");
 function formatShortDate(value) { return parseLocalDate(value).toLocaleDateString("en-US", { month: "short", day: "numeric" }); }
 function formatFullDate(value) { return parseLocalDate(value).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }); }
 
+function safeProfilePhoto(value) {
+  return typeof value === "string" && value.length < 500000 && /^data:image\/(?:jpeg|png|webp);base64,/i.test(value) ? value : "";
+}
+function normalizeProfile(profile = {}) {
+  const displayName = String(profile.displayName || profile.name || state.account?.name || "RepRoot athlete").trim().slice(0, 50) || "RepRoot athlete";
+  const favoriteExerciseId = exerciseById(profile.favoriteExerciseId) ? profile.favoriteExerciseId : "";
+  return { displayName, bio: String(profile.bio || "").trim().slice(0, 160), favoriteExerciseId, photoDataUrl: safeProfilePhoto(profile.photoDataUrl) };
+}
+
 function accountStorageKey(baseKey) {
   if (!state.account) throw new Error("An authenticated account is required.");
   return `${baseKey}:${state.account.id}`;
@@ -203,6 +214,8 @@ function loadLogs() {
   try { const routines = JSON.parse(localStorage.getItem(accountStorageKey(ROUTINES_STORAGE_KEY))); state.routines = withCurrentBuiltInRoutines(routines); } catch { state.routines = withCurrentBuiltInRoutines(); }
   try { const custom = JSON.parse(localStorage.getItem(accountStorageKey(CUSTOM_EXERCISES_KEY))); state.customExercises = Array.isArray(custom) ? custom : []; } catch { state.customExercises = []; }
   try { state.settings = { ...DEFAULT_SETTINGS, ...(JSON.parse(localStorage.getItem(accountStorageKey(SETTINGS_STORAGE_KEY))) || {}) }; } catch { state.settings = { ...DEFAULT_SETTINGS }; }
+  try { state.profile = normalizeProfile(JSON.parse(localStorage.getItem(cloudProfileKey(state.account.id))) || {}); } catch { state.profile = normalizeProfile(); }
+  state.account.name = state.profile.displayName;
   saveRoutines();
 }
 function markCloudDirty() {
@@ -216,6 +229,11 @@ function saveSessions() { localStorage.setItem(accountStorageKey(SESSION_STORAGE
 function saveRoutines() { localStorage.setItem(accountStorageKey(ROUTINES_STORAGE_KEY), JSON.stringify(state.routines)); markCloudDirty(); }
 function saveCustomExercises() { localStorage.setItem(accountStorageKey(CUSTOM_EXERCISES_KEY), JSON.stringify(state.customExercises)); markCloudDirty(); }
 function saveSettings() { localStorage.setItem(accountStorageKey(SETTINGS_STORAGE_KEY), JSON.stringify(state.settings)); markCloudDirty(); }
+function saveProfile() {
+  if (!state.account) return;
+  localStorage.setItem(cloudProfileKey(state.account.id), JSON.stringify({ ...state.profile, name: state.profile.displayName, tutorialComplete: state.account.tutorialComplete }));
+  markCloudDirty();
+}
 function saveActiveWorkout() {
   const key = accountStorageKey(ACTIVE_WORKOUT_KEY);
   if (state.activeWorkout) localStorage.setItem(key, JSON.stringify(state.activeWorkout));
@@ -314,8 +332,10 @@ function readAccountValue(baseKey, accountId, fallback) {
 }
 function trainingPayloadForAccount(accountId) {
   const routines = readAccountValue(ROUTINES_STORAGE_KEY, accountId, []);
+  const legacyAccount = getAccounts().find(account => account.id === accountId);
   return {
     version: 4, savedAt: new Date().toISOString(),
+    profile: normalizeProfile({ displayName: legacyAccount?.name || "" }),
     settings: { ...DEFAULT_SETTINGS, ...readAccountValue(SETTINGS_STORAGE_KEY, accountId, {}) },
     customExercises: readAccountValue(CUSTOM_EXERCISES_KEY, accountId, []),
     routines: withCurrentBuiltInRoutines(routines),
@@ -327,7 +347,7 @@ function trainingPayloadForAccount(accountId) {
 }
 function currentTrainingPayload() {
   return {
-    version: 4, savedAt: new Date().toISOString(), settings: state.settings,
+    version: 4, savedAt: new Date().toISOString(), profile: state.profile, settings: state.settings,
     customExercises: state.customExercises, routines: state.routines,
     strengthLogs: state.logs, cardioLogs: state.cardioLogs, workoutSessions: state.sessions,
     activeWorkout: state.activeWorkout
@@ -345,7 +365,7 @@ function mergeTrainingPayload(primary, addition) {
   if (!primary) return addition;
   if (!addition) return primary;
   return {
-    version: 4, savedAt: new Date().toISOString(), settings: primary.settings || addition.settings || { ...DEFAULT_SETTINGS },
+    version: 4, savedAt: new Date().toISOString(), profile: primary.profile || addition.profile || { ...DEFAULT_PROFILE }, settings: primary.settings || addition.settings || { ...DEFAULT_SETTINGS },
     customExercises: mergeRecords(addition.customExercises || [], primary.customExercises || []),
     routines: mergeRecords(addition.routines || [], primary.routines || []),
     strengthLogs: mergeRecords(addition.strengthLogs || [], primary.strengthLogs || []),
@@ -362,6 +382,8 @@ function applyTrainingPayload(payload) {
   state.cardioLogs = Array.isArray(payload?.cardioLogs) ? payload.cardioLogs.filter(log => cardioById(log.activityId)) : [];
   state.sessions = Array.isArray(payload?.workoutSessions) ? payload.workoutSessions : [];
   state.routines = withCurrentBuiltInRoutines(payload?.routines).map(routine => ({ ...routine, exerciseIds: (routine.exerciseIds || []).filter(id => validExerciseIds.has(id)) }));
+  state.profile = normalizeProfile(payload?.profile || state.profile);
+  if (state.account) state.account.name = state.profile.displayName;
   const settings = payload?.settings || {};
   state.settings = {
     weightUnit: settings.weightUnit === "kg" ? "kg" : "lb",
@@ -372,7 +394,7 @@ function applyTrainingPayload(payload) {
 }
 function persistTrainingCache() {
   const previousHydrating = state.isHydrating; state.isHydrating = true;
-  saveLogs(); saveCardioLogs(); saveSessions(); saveRoutines(); saveCustomExercises(); saveSettings(); saveActiveWorkout();
+  saveLogs(); saveCardioLogs(); saveSessions(); saveRoutines(); saveCustomExercises(); saveSettings(); saveProfile(); saveActiveWorkout();
   state.isHydrating = previousHydrating;
 }
 async function verifiedLegacyPayload() {
@@ -521,9 +543,7 @@ async function enterAuthenticatedApp(isNewAccount) {
   populateSelects();
   applySettingsToUI();
   document.body.classList.remove("auth-locked");
-  const initials = state.account.name.split(/\s+/).slice(0, 2).map(part => part[0]).join("").toUpperCase();
-  document.querySelector("#profileAvatar").textContent = initials;
-  document.querySelector("#profileName").textContent = state.account.name;
+  renderProfile();
   const latestExercise = [...state.logs].sort((a, b) => b.date.localeCompare(a.date))[0]?.exerciseId;
   if (latestExercise) document.querySelector("#progressExercise").value = latestExercise;
   state.selectedWeekStart = startOfWeek(new Date());
@@ -542,7 +562,7 @@ async function signOut() {
   if (accessToken && navigator.onLine) fetch(`${SUPABASE_URL}/auth/v1/logout`, { method: "POST", headers: { apikey: SUPABASE_PUBLISHABLE_KEY, Authorization: `Bearer ${accessToken}` } }).catch(() => {});
   localStorage.removeItem(AUTH_SESSION_KEY); storeCloudSession(null);
   clearInterval(state.timerInterval); clearInterval(state.restTimerInterval);
-  state.account = null; state.logs = []; state.cardioLogs = []; state.sessions = []; state.activeWorkout = null; state.routines = []; state.customExercises = []; state.settings = { ...DEFAULT_SETTINGS };
+  state.account = null; state.logs = []; state.cardioLogs = []; state.sessions = []; state.activeWorkout = null; state.routines = []; state.customExercises = []; state.settings = { ...DEFAULT_SETTINGS }; state.profile = { ...DEFAULT_PROFILE };
   document.querySelector("#tutorialOverlay").hidden = true;
   document.body.classList.add("auth-locked");
   setAuthMode("signin");
@@ -552,7 +572,8 @@ async function signOut() {
 function updateCurrentAccount(updates) {
   if (!state.account) return;
   Object.assign(state.account, updates);
-  localStorage.setItem(cloudProfileKey(state.account.id), JSON.stringify({ name: state.account.name, tutorialComplete: state.account.tutorialComplete }));
+  if (updates.name) state.profile.displayName = String(updates.name).trim().slice(0, 50);
+  saveProfile();
 }
 
 function openTutorial(step = 0) {
@@ -595,6 +616,8 @@ function populateSelects() {
   const movements = [...new Set(exercises.map(ex => ex.movement))].sort();
   document.querySelector("#movementFilter").innerHTML = `<option value="all">All movement types</option>${movements.map(type => `<option>${escapeHTML(type)}</option>`).join("")}`;
   document.querySelector("#cardioActivity").innerHTML = CARDIO_ACTIVITIES.map(activity => `<option value="${activity.id}">${activity.name}</option>`).join("");
+  const favoriteMachines = exercises.filter(exercise => /machine|leg press/i.test(exercise.equipment)).sort((a, b) => a.name.localeCompare(b.name));
+  document.querySelector("#profileFavoriteMachine").innerHTML = `<option value="">Still deciding</option>${favoriteMachines.map(exercise => `<option value="${exercise.id}">${escapeHTML(exercise.name)}</option>`).join("")}`;
   document.querySelector("#liveExercise").innerHTML = exerciseOptions;
   document.querySelector("#customExercisePrimary").innerHTML = MUSCLE_GROUPS.map(group => `<option>${group}</option>`).join("");
   document.querySelector("#routineMuscleFilter").innerHTML = `<option value="all">All muscle groups</option><option value="lower">Lower body</option>${MUSCLE_GROUPS.map(group => `<option value="${group}">${group}</option>`).join("")}`;
@@ -735,6 +758,12 @@ function bindEvents() {
   document.querySelector("#newExerciseButton").addEventListener("click", () => document.querySelector("#exerciseDialog").showModal());
   document.querySelector("#customExerciseForm").addEventListener("submit", saveCustomExercise);
   document.querySelector("#settingsForm").addEventListener("submit", savePreferences);
+  document.querySelector("#profileForm").addEventListener("submit", saveFitnessProfile);
+  document.querySelector("#profileBio").addEventListener("input", updateProfileDraftPreview);
+  document.querySelector("#profileDisplayName").addEventListener("input", updateProfileDraftPreview);
+  document.querySelector("#profileFavoriteMachine").addEventListener("change", updateProfileDraftPreview);
+  document.querySelector("#profilePhotoInput").addEventListener("change", handleProfilePhoto);
+  document.querySelector("#removeProfilePhotoButton").addEventListener("click", removeProfilePhoto);
   document.querySelector("#syncNowButton").addEventListener("click", syncNow);
   document.querySelector("#settingsExportButton").addEventListener("click", exportJSON);
   document.querySelector("#importBackupInput").addEventListener("change", importBackup);
@@ -1115,11 +1144,106 @@ function applySettingsToUI() {
   if (exercise) document.querySelector("#liveWeightLabel").textContent = `${exercise.equipment === "Bodyweight" ? "Added load" : "Weight"} (${unitLabel()})`;
 }
 
+function profileInitials(name = "") {
+  return name.split(/\s+/).filter(Boolean).slice(0, 2).map(part => part[0]).join("").toUpperCase() || "RR";
+}
+
+function paintProfilePhoto(element, photoDataUrl, name) {
+  if (!element) return;
+  element.replaceChildren();
+  if (photoDataUrl) {
+    const image = document.createElement("img");
+    image.src = photoDataUrl; image.alt = "";
+    element.append(image);
+  } else element.textContent = profileInitials(name);
+}
+
+function renderProfile() {
+  if (!state.account) return;
+  state.profile = normalizeProfile(state.profile);
+  const favorite = exerciseById(state.profile.favoriteExerciseId);
+  paintProfilePhoto(document.querySelector("#profileAvatar"), state.profile.photoDataUrl, state.profile.displayName);
+  paintProfilePhoto(document.querySelector("#profilePhotoPreview"), state.profile.photoDataUrl, state.profile.displayName);
+  document.querySelector("#profileName").textContent = state.profile.displayName;
+  document.querySelector("#profileFavorite").textContent = favorite ? `☆ ${favorite.name}` : "Personal training space";
+  document.querySelector("#profilePreviewName").textContent = state.profile.displayName;
+  document.querySelector("#profilePreviewBio").textContent = state.profile.bio || "Add a quick bio about what keeps you moving.";
+  document.querySelector("#profilePreviewFavorite").textContent = favorite ? `★ ${favorite.name}` : "☆ Pick a favorite machine";
+  document.querySelector("#profileDisplayName").value = state.profile.displayName;
+  document.querySelector("#profileBio").value = state.profile.bio;
+  document.querySelector("#profileBioCount").textContent = `${state.profile.bio.length} / 160`;
+  document.querySelector("#profileFavoriteMachine").value = favorite?.id || "";
+  document.querySelector("#removeProfilePhotoButton").hidden = !state.profile.photoDataUrl;
+}
+
+function updateProfileDraftPreview() {
+  const name = document.querySelector("#profileDisplayName").value.trim() || "RepRoot athlete";
+  const bio = document.querySelector("#profileBio").value.slice(0, 160);
+  const favorite = exerciseById(document.querySelector("#profileFavoriteMachine").value);
+  paintProfilePhoto(document.querySelector("#profilePhotoPreview"), state.profile.photoDataUrl, name);
+  document.querySelector("#profilePreviewName").textContent = name;
+  document.querySelector("#profilePreviewBio").textContent = bio || "Add a quick bio about what keeps you moving.";
+  document.querySelector("#profilePreviewFavorite").textContent = favorite ? `★ ${favorite.name}` : "☆ Pick a favorite machine";
+  document.querySelector("#profileBioCount").textContent = `${bio.length} / 160`;
+}
+
+function saveFitnessProfile(event) {
+  event.preventDefault();
+  const displayName = document.querySelector("#profileDisplayName").value.trim();
+  if (displayName.length < 2) { showToast("Use at least two characters for your display name."); return; }
+  state.profile = normalizeProfile({
+    ...state.profile, displayName,
+    bio: document.querySelector("#profileBio").value,
+    favoriteExerciseId: document.querySelector("#profileFavoriteMachine").value
+  });
+  state.account.name = state.profile.displayName;
+  saveProfile(); renderProfile();
+  showToast("Fitness profile saved and ready to sync.");
+}
+
+async function resizedProfilePhoto(file) {
+  if (!file?.type?.startsWith("image/")) throw new Error("Choose an image from your photo library.");
+  if (file.size > 12 * 1024 * 1024) throw new Error("Choose a photo smaller than 12 MB.");
+  const objectUrl = URL.createObjectURL(file);
+  try {
+    const image = new Image(); image.src = objectUrl;
+    await image.decode();
+    const sourceSize = Math.min(image.naturalWidth, image.naturalHeight);
+    const sourceX = (image.naturalWidth - sourceSize) / 2;
+    const sourceY = (image.naturalHeight - sourceSize) / 2;
+    const outputSize = Math.min(420, sourceSize);
+    const canvas = document.createElement("canvas"); canvas.width = outputSize; canvas.height = outputSize;
+    const context = canvas.getContext("2d");
+    context.fillStyle = "#f4f8f6"; context.fillRect(0, 0, outputSize, outputSize);
+    context.drawImage(image, sourceX, sourceY, sourceSize, sourceSize, 0, 0, outputSize, outputSize);
+    return canvas.toDataURL("image/jpeg", .82);
+  } finally { URL.revokeObjectURL(objectUrl); }
+}
+
+async function handleProfilePhoto(event) {
+  const input = event.currentTarget;
+  try {
+    if (!input.files?.[0]) return;
+    state.profile.photoDataUrl = await resizedProfilePhoto(input.files[0]);
+    updateProfileDraftPreview();
+    document.querySelector("#removeProfilePhotoButton").hidden = false;
+    showToast("Photo ready. Tap Save profile to sync it.");
+  } catch (error) { showToast(error.message || "Unable to use that photo."); }
+  finally { input.value = ""; }
+}
+
+function removeProfilePhoto() {
+  state.profile.photoDataUrl = "";
+  updateProfileDraftPreview();
+  document.querySelector("#removeProfilePhotoButton").hidden = true;
+}
+
 function renderSettings() {
   if (!state.account) return;
   document.querySelector("#weightUnit").value = state.settings.weightUnit;
   document.querySelector("#weeklySetTarget").value = state.settings.weeklySetTarget;
   document.querySelector("#defaultRestSeconds").value = String(state.settings.restSeconds);
+  renderProfile();
 }
 
 function savePreferences(event) {
@@ -1357,7 +1481,7 @@ function downloadFile(filename, content, type) {
 function exportJSON() {
   const backup = {
     ...currentTrainingPayload(), exportedAt: new Date().toISOString(),
-    profile: { name: state.account.name, email: state.account.email },
+    profile: { ...state.profile, email: state.account.email },
   };
   downloadFile(`reproot-backup-${toISODate(new Date())}.json`, JSON.stringify(backup, null, 2), "application/json");
   showToast("Full training backup exported.");
@@ -1394,8 +1518,10 @@ async function importBackup(event) {
       weeklySetTarget: Math.min(30, Math.max(4, Number(importedSettings.weeklySetTarget) || DEFAULT_SETTINGS.weeklySetTarget)),
       restSeconds: [60, 90, 120, 180].includes(Number(importedSettings.restSeconds)) ? Number(importedSettings.restSeconds) : DEFAULT_SETTINGS.restSeconds
     };
+    state.profile = normalizeProfile(backup.profile || state.profile);
+    state.account.name = state.profile.displayName;
     state.activeWorkout = backup.activeWorkout || null;
-    saveLogs(); saveCardioLogs(); saveSessions(); saveRoutines(); saveCustomExercises(); saveSettings(); saveActiveWorkout();
+    saveLogs(); saveCardioLogs(); saveSessions(); saveRoutines(); saveCustomExercises(); saveSettings(); saveProfile(); saveActiveWorkout();
     populateSelects(); applySettingsToUI(); renderAll();
     showToast("Backup restored successfully.");
   } catch (error) {
