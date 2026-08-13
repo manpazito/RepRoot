@@ -1,0 +1,381 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#283f3b" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="RepRoot" />
+    <title>RepRoot — Muscle Group Tracker</title>
+    <link rel="manifest" href="manifest.webmanifest" />
+    <link rel="icon" href="icon.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body class="auth-locked">
+    <section class="auth-screen" id="authScreen" aria-labelledby="authTitle">
+      <div class="auth-brand">
+        <span class="brand-mark" aria-hidden="true"><i></i><i></i><i></i></span>
+        <span>REPROOT</span>
+      </div>
+      <div class="auth-layout">
+        <div class="auth-story">
+          <p class="eyebrow">Train with clarity</p>
+          <h1>Every rep.<br />Every mile.<br /><em>Rooted in progress.</em></h1>
+          <p>Strength, stamina, recovery, and personal records in one private training space.</p>
+          <div class="auth-points"><span>✓ Strength & machine tracking</span><span>✓ Cardio and stamina trends</span><span>✓ Live muscle targeting</span></div>
+        </div>
+        <div class="auth-card">
+          <div class="auth-tabs" role="tablist">
+            <button class="active" type="button" id="createAccountTab">Create account</button>
+            <button type="button" id="signInTab">Sign in</button>
+          </div>
+          <div class="auth-heading"><p class="eyebrow" id="authEyebrow">Start from zero</p><h2 id="authTitle">Create your account</h2><p id="authSubtitle">Your profile and training history stay on this device.</p></div>
+          <form id="authForm">
+            <label id="nameField"><span>Full name</span><input id="accountName" type="text" autocomplete="name" placeholder="Your name" /></label>
+            <label><span>Email address</span><input id="accountEmail" type="email" autocomplete="email" placeholder="you@example.com" required /></label>
+            <label><span>Password</span><input id="accountPassword" type="password" autocomplete="new-password" minlength="8" placeholder="At least 8 characters" required /></label>
+            <p class="auth-error" id="authError" role="alert"></p>
+            <button class="button button-primary auth-submit" type="submit"><span id="authSubmitLabel">Create account</span> →</button>
+          </form>
+          <p class="local-account-note"><strong>On-device profile</strong> · Your password is hashed and training data stays in this browser. Export a backup before clearing browser data.</p>
+        </div>
+      </div>
+    </section>
+
+    <div class="app-shell">
+      <aside class="sidebar" aria-label="Main navigation">
+        <a class="brand" href="#overview" data-route="overview" aria-label="RepRoot home">
+          <span class="brand-mark" aria-hidden="true"><i></i><i></i><i></i></span>
+          <span>REPROOT</span>
+        </a>
+
+        <nav class="side-nav">
+          <p class="nav-label">Workspace</p>
+          <a class="nav-item active" href="#overview" data-route="overview">
+            <span class="nav-icon">⌂</span><span>Overview</span>
+          </a>
+          <a class="nav-item" href="#log" data-route="log">
+            <span class="nav-icon">▰</span><span>Strength</span>
+          </a>
+          <a class="nav-item" href="#cardio" data-route="cardio">
+            <span class="nav-icon">♥</span><span>Cardio</span>
+          </a>
+          <a class="nav-item workout-nav" href="#workout" data-route="workout">
+            <span class="nav-icon">▶</span><span>Workout mode</span>
+          </a>
+          <a class="nav-item" href="#exercises" data-route="exercises">
+            <span class="nav-icon">⌘</span><span>Exercises</span>
+          </a>
+          <a class="nav-item" href="#progress" data-route="progress">
+            <span class="nav-icon">↗</span><span>Progress</span>
+          </a>
+          <button class="nav-item nav-button" id="tutorialButton">
+            <span class="nav-icon">?</span><span>How to use</span>
+          </button>
+        </nav>
+
+        <div class="sidebar-tip">
+          <span class="tip-icon">↯</span>
+          <p><strong>Recovery tip</strong></p>
+          <p>Most muscle groups benefit from 48–72 hours before another hard session.</p>
+        </div>
+
+        <div class="sidebar-footer">
+          <div class="avatar" id="profileAvatar">—</div>
+          <div><strong id="profileName">Your profile</strong><span>Personal training space</span></div>
+          <button class="icon-button" id="exportButton" title="Export workout data" aria-label="Export workout data">⇩</button>
+          <button class="icon-button" id="signOutButton" title="Sign out" aria-label="Sign out">↪</button>
+        </div>
+      </aside>
+
+      <main class="main-content">
+        <header class="topbar">
+          <button class="menu-button" id="menuButton" aria-label="Open navigation">☰</button>
+          <div class="breadcrumb"><span>Training</span><b>/</b><strong id="pageCrumb">Overview</strong></div>
+          <div class="top-actions">
+            <span class="live-pill"><i></i> Local data</span>
+            <button class="button button-primary compact global-workout-button" data-route-button="workout"><span class="global-workout-icon">▶</span><span class="global-workout-label">Start workout</span></button>
+          </div>
+        </header>
+
+        <div class="page-container">
+          <section class="page active" id="overviewPage" data-page="overview">
+            <div class="hero-row">
+              <div>
+                <p class="eyebrow">Training overview</p>
+                <h1>Build with intention.</h1>
+                <p class="hero-copy">Weekly volume, recovery, and progress—without the spreadsheet gymnastics.</p>
+              </div>
+              <div class="week-control" aria-label="Selected week">
+                <button id="previousWeek" aria-label="Previous week">←</button>
+                <div><span>Selected week</span><strong id="weekLabel">—</strong></div>
+                <button id="nextWeek" aria-label="Next week">→</button>
+              </div>
+            </div>
+
+            <div class="stat-grid">
+              <article class="stat-card accent-card">
+                <div class="stat-heading"><span>Weekly volume</span><span class="stat-icon">↗</span></div>
+                <strong id="weeklyVolume">0</strong>
+                <p>lb lifted this week</p>
+                <div class="mini-bars" id="volumeBars" aria-hidden="true"></div>
+              </article>
+              <article class="stat-card">
+                <div class="stat-heading"><span>Working sets</span><span class="stat-icon neutral">#</span></div>
+                <strong id="weeklySets">0</strong>
+                <p><span id="setComparison">No prior week data</span></p>
+                <div class="progress-track"><i id="setProgress"></i></div>
+              </article>
+              <article class="stat-card">
+                <div class="stat-heading"><span>Muscles trained</span><span class="stat-icon neutral">◎</span></div>
+                <strong><span id="musclesTrained">0</span><small>/9</small></strong>
+                <p id="muscleCoverageCopy">Start logging to build coverage</p>
+                <div class="dot-track" id="muscleDots"></div>
+              </article>
+              <article class="stat-card">
+                <div class="stat-heading"><span>Recent PRs</span><span class="stat-icon neutral">★</span></div>
+                <strong id="recentPrs">0</strong>
+                <p>in the last 30 days</p>
+                <button class="text-button" data-route-button="progress">View records →</button>
+              </article>
+            </div>
+
+            <div class="section-heading dashboard-heading">
+              <div>
+                <h2>Muscle balance & recovery</h2>
+                <p>Volume is measured in working sets. Recovery is estimated from your latest session.</p>
+              </div>
+              <div class="legend"><span><i class="ready"></i>Ready</span><span><i class="soon"></i>Recovering</span><span><i class="rest"></i>Rest advised</span></div>
+            </div>
+            <div class="muscle-grid" id="muscleGrid"></div>
+
+            <div class="overview-bottom-grid">
+              <article class="panel">
+                <div class="panel-heading">
+                  <div><p class="eyebrow">This week</p><h2>Recent sessions</h2></div>
+                  <button class="text-button" data-route-button="progress">View all →</button>
+                </div>
+                <div class="session-list" id="recentSessions"></div>
+              </article>
+              <article class="panel insight-panel">
+                <div class="insight-icon">✦</div>
+                <p class="eyebrow">Training insight</p>
+                <h2 id="insightTitle">Your balance looks solid.</h2>
+                <p id="insightCopy">Keep logging sessions to receive weekly volume and recovery guidance.</p>
+                  <button class="button button-dark" data-route-button="workout">Start a workout</button>
+              </article>
+            </div>
+          </section>
+
+          <section class="page" id="logPage" data-page="log">
+            <div class="training-switch" aria-label="Training type">
+              <button class="active" data-route-button="log"><span>▰</span>Strength training</button>
+              <button data-route-button="cardio"><span>♥</span>Cardio</button>
+            </div>
+            <div class="page-title-row">
+              <div><p class="eyebrow">Strength training</p><h1>Record the work.</h1><p>Track machine and free-weight performance one exercise at a time.</p></div>
+            </div>
+            <div class="logger-layout">
+              <form class="logger-form panel" id="workoutForm">
+                <div class="form-heading"><span>01</span><div><h2>Session details</h2><p>Required fields are marked with an asterisk.</p></div></div>
+                <div class="form-grid">
+                  <label><span>Date *</span><input type="date" id="logDate" required /></label>
+                  <label><span>Exercise *</span><select id="logExercise" required></select></label>
+                  <label><span>Target muscle *</span><select id="logMuscle" required></select></label>
+                  <label><span>Movement type</span><input id="logMovement" type="text" readonly /></label>
+                  <label><span>Sets *</span><input type="number" id="logSets" min="1" max="20" value="3" required /></label>
+                  <label><span>Reps per set *</span><input type="number" id="logReps" min="1" max="100" value="8" required /></label>
+                  <label><span>Weight (lb) *</span><input type="number" id="logWeight" min="0" step="0.5" value="45" required /></label>
+                  <label class="full-span"><span>Notes <em>optional</em></span><textarea id="logNotes" rows="4" placeholder="RPE, tempo, setup cues, how it felt…"></textarea></label>
+                </div>
+                <div class="form-footer">
+                  <p><strong id="volumePreview">1,080 lb</strong><span>estimated entry volume</span></p>
+                  <button class="button button-primary" type="submit">Save workout entry <span>→</span></button>
+                </div>
+              </form>
+              <aside class="logger-aside">
+                <article class="panel quick-guide">
+                  <p class="eyebrow">Quick guide</p>
+                  <h3>What counts as a working set?</h3>
+                  <p>A challenging set performed within roughly 4 reps of failure. Warm-up sets generally should not be logged.</p>
+                  <ul><li>Use the same unit consistently</li><li>Log actual completed reps</li><li>Add an RPE note when useful</li></ul>
+                </article>
+                <article class="panel last-entry" id="lastEntryCard"></article>
+              </aside>
+            </div>
+          </section>
+
+          <section class="page" id="cardioPage" data-page="cardio">
+            <div class="training-switch" aria-label="Training type">
+              <button data-route-button="log"><span>▰</span>Strength training</button>
+              <button class="active" data-route-button="cardio"><span>♥</span>Cardio</button>
+            </div>
+            <div class="page-title-row cardio-title">
+              <div><p class="eyebrow">Cardio & stamina</p><h1>Go farther.</h1><p>Track distance, time, pace, and effort across every endurance activity.</p></div>
+              <div class="cardio-week-summary"><span>This week</span><strong id="cardioWeekMinutes">0 min</strong><small id="cardioWeekDistance">0 miles</small></div>
+            </div>
+
+            <div class="activity-strip" id="activityStrip" aria-label="Cardio activity picker"></div>
+
+            <div class="cardio-layout">
+              <form class="panel cardio-form" id="cardioForm">
+                <div class="form-heading"><span>♥</span><div><h2>Log cardio</h2><p>Use miles for running and cycling, or yards for swimming.</p></div></div>
+                <div class="form-grid">
+                  <label><span>Date *</span><input type="date" id="cardioDate" required /></label>
+                  <label><span>Activity *</span><select id="cardioActivity" required></select></label>
+                  <label><span>Duration (minutes) *</span><input type="number" id="cardioDuration" min="1" max="1440" value="30" required /></label>
+                  <label><span id="distanceLabel">Distance (miles) *</span><input type="number" id="cardioDistance" min="0" step="0.01" value="3" required /></label>
+                  <label><span>Effort</span><select id="cardioEffort"><option>Easy</option><option selected>Moderate</option><option>Hard</option><option>Max effort</option></select></label>
+                  <label><span>Average heart rate <em>optional</em></span><input type="number" id="cardioHeartRate" min="30" max="240" placeholder="e.g. 148" /></label>
+                  <label class="full-span"><span>Notes <em>optional</em></span><textarea id="cardioNotes" rows="3" placeholder="Route, intervals, weather, how it felt…"></textarea></label>
+                </div>
+                <div class="form-footer">
+                  <p><strong id="pacePreview">10:00 /mi</strong><span>estimated average pace</span></p>
+                  <button class="button button-primary" type="submit">Save cardio activity <span>→</span></button>
+                </div>
+              </form>
+              <aside class="panel cardio-trend-panel">
+                <div class="panel-heading"><div><p class="eyebrow">Stamina trend</p><h2 id="cardioTrendTitle">Recent performance</h2></div></div>
+                <div class="cardio-stats" id="cardioStats"></div>
+                <div class="cardio-mini-chart" id="cardioChart"></div>
+                <div class="cardio-recent" id="cardioRecent"></div>
+              </aside>
+            </div>
+            <article class="panel cardio-history-panel">
+              <div class="panel-heading"><div><p class="eyebrow">Endurance history</p><h2>All cardio activity</h2></div><button class="button button-outline compact" id="exportCardioButton">Export CSV</button></div>
+              <div class="cardio-history-head"><span>Date</span><span>Activity</span><span>Duration</span><span>Distance</span><span>Pace</span><span></span></div>
+              <div id="cardioHistoryRows"></div>
+            </article>
+          </section>
+
+          <section class="page" id="workoutPage" data-page="workout">
+            <div class="workout-mode-header">
+              <div><p class="eyebrow">Live session</p><h1>Workout mode</h1><p>Complete sets and watch each targeted muscle group light up.</p></div>
+              <div class="workout-clock"><span id="workoutStatus">Ready</span><strong id="workoutTimer">00:00</strong></div>
+            </div>
+
+            <div class="workout-mode-grid">
+              <section class="panel live-set-panel">
+                <div class="live-indicator"><i></i><span id="liveIndicatorText">Session not started</span></div>
+                <h2>Track your next set</h2>
+                <p class="muted-copy">Pick an exercise, enter what you completed, then tap the set button.</p>
+                <div class="live-fields">
+                  <label><span>Exercise</span><select id="liveExercise"></select></label>
+                  <div class="live-number-row">
+                    <label><span>Weight (lb)</span><input id="liveWeight" inputmode="decimal" type="number" min="0" step="0.5" value="45" /></label>
+                    <label><span>Reps</span><input id="liveReps" inputmode="numeric" type="number" min="1" max="100" value="10" /></label>
+                  </div>
+                </div>
+                <button class="complete-set-button" id="completeSetButton"><span>＋</span><strong>Complete set</strong><small id="completeSetMuscle">Chest</small></button>
+                <div class="workout-controls">
+                  <button class="button button-outline" id="pauseWorkoutButton" disabled>Pause</button>
+                  <button class="button finish-button" id="finishWorkoutButton" disabled>Finish & save</button>
+                </div>
+                <button class="discard-workout-button" id="discardWorkoutButton" disabled>Discard this session</button>
+                <p class="workout-save-note">Your active session stays on this device if you leave this screen.</p>
+              </section>
+
+              <section class="panel muscle-map-panel">
+                <div class="panel-heading"><div><p class="eyebrow">Live muscle map</p><h2>Target intensity</h2></div><strong id="workoutSetCount">0 sets</strong></div>
+                <div class="muscle-map-wrap">
+                  <svg class="body-map" viewBox="0 0 320 390" role="img" aria-label="Muscle groups worked this session">
+                    <g class="body-outline"><circle cx="160" cy="36" r="24"/><path d="M130 67 Q160 55 190 67 L207 168 190 224 188 350 164 350 160 232 156 350 132 350 130 224 113 168Z"/><path d="M128 78 104 91 78 185 96 191 128 119M192 78 216 91 242 185 224 191 192 119"/></g>
+                    <g class="muscle-zone" data-map-muscle="Shoulders"><ellipse cx="125" cy="82" rx="22" ry="15"/><ellipse cx="195" cy="82" rx="22" ry="15"/></g>
+                    <g class="muscle-zone" data-map-muscle="Chest"><path d="M134 86 Q159 77 158 118 Q136 122 129 105Z"/><path d="M186 86 Q161 77 162 118 Q184 122 191 105Z"/></g>
+                    <g class="muscle-zone" data-map-muscle="Back"><path d="M132 120 Q160 137 188 120 L184 166 Q160 177 136 166Z"/></g>
+                    <g class="muscle-zone" data-map-muscle="Biceps"><path d="M106 102 Q117 100 121 114 L107 154 96 150Z"/><path d="M214 102 Q203 100 199 114 L213 154 224 150Z"/></g>
+                    <g class="muscle-zone" data-map-muscle="Triceps"><path d="M99 151 110 155 99 184 86 181Z"/><path d="M221 151 210 155 221 184 234 181Z"/></g>
+                    <g class="muscle-zone" data-map-muscle="Core"><path d="M138 126 Q160 136 182 126 L181 193 Q160 207 139 193Z"/></g>
+                    <g class="muscle-zone" data-map-muscle="Quads"><path d="M132 200 157 207 153 277 132 274Z"/><path d="M188 200 163 207 167 277 188 274Z"/></g>
+                    <g class="muscle-zone" data-map-muscle="Hamstrings"><path d="M132 277 153 281 150 327 132 327Z"/><path d="M188 277 167 281 170 327 188 327Z"/></g>
+                    <g class="muscle-zone" data-map-muscle="Calves"><path d="M132 327 150 330 148 374 135 374Z"/><path d="M188 327 170 330 172 374 185 374Z"/></g>
+                  </svg>
+                  <div class="heat-legend"><span>Targeted</span><i></i><i></i><i></i><i></i><strong>High volume</strong></div>
+                </div>
+                <div class="live-muscle-list" id="liveMuscleList"></div>
+              </section>
+
+              <section class="panel session-feed-panel">
+                <div class="panel-heading"><div><p class="eyebrow">This session</p><h2>Completed sets</h2></div><button class="text-button" id="undoSetButton" disabled>Undo last</button></div>
+                <div class="session-feed" id="sessionFeed"><div class="empty-state">Your completed sets will appear here.</div></div>
+              </section>
+            </div>
+          </section>
+
+          <section class="page" id="exercisesPage" data-page="exercises">
+            <div class="page-title-row">
+              <div><p class="eyebrow">Exercise database</p><h1>Find your movement.</h1><p>A curated library organized by primary muscle and movement pattern.</p></div>
+              <div class="count-badge"><strong id="exerciseCount">0</strong><span>movements</span></div>
+            </div>
+            <div class="filter-bar panel">
+              <label class="search-field"><span>⌕</span><input id="exerciseSearch" type="search" placeholder="Search exercises or equipment…" /></label>
+              <select id="muscleFilter" aria-label="Filter by muscle"><option value="all">All muscle groups</option></select>
+              <select id="movementFilter" aria-label="Filter by movement"><option value="all">All movement types</option></select>
+            </div>
+            <div class="exercise-table panel">
+              <div class="exercise-row table-header"><span>Exercise</span><span>Primary muscle</span><span>Movement</span><span>Equipment</span><span></span></div>
+              <div id="exerciseRows"></div>
+            </div>
+          </section>
+
+          <section class="page" id="progressPage" data-page="progress">
+            <div class="page-title-row">
+              <div><p class="eyebrow">Progress tracking</p><h1>Proof of progress.</h1><p>Follow working-weight trends, estimated strength, and every logged session.</p></div>
+              <button class="button button-outline" id="clearDataButton">Clear training data</button>
+            </div>
+            <div class="progress-grid">
+              <article class="panel chart-panel">
+                <div class="panel-heading">
+                  <div><p class="eyebrow">Weight progression</p><h2 id="chartTitle">Exercise trend</h2></div>
+                  <select id="progressExercise" aria-label="Select exercise"></select>
+                </div>
+                <div class="chart-summary" id="chartSummary"></div>
+                <div class="chart-wrap" id="progressChart" aria-label="Weight progression chart"></div>
+              </article>
+              <article class="panel records-panel">
+                <div class="panel-heading"><div><p class="eyebrow">Personal records</p><h2>Top lifts</h2></div><span class="trophy">★</span></div>
+                <div id="personalRecords"></div>
+              </article>
+            </div>
+            <article class="panel history-panel">
+              <div class="panel-heading">
+                <div><p class="eyebrow">All activity</p><h2>Workout history</h2></div>
+                <div class="history-actions"><input id="historySearch" type="search" placeholder="Filter history…" /><button class="button button-outline compact" id="exportHistoryButton">Export CSV</button></div>
+              </div>
+              <div class="history-table">
+                <div class="history-row table-header"><span>Date</span><span>Exercise</span><span>Muscle</span><span>Sets × reps</span><span>Weight</span><span>Volume</span><span></span></div>
+                <div id="historyRows"></div>
+              </div>
+            </article>
+          </section>
+        </div>
+      </main>
+    </div>
+    <nav class="mobile-tabbar" aria-label="Mobile navigation">
+      <button class="active" data-route-button="overview"><span>⌂</span><small>Home</small></button>
+      <button data-route-button="cardio"><span>♥</span><small>Cardio</small></button>
+      <button class="workout-tab global-workout-button" data-route-button="workout"><span class="global-workout-icon">▶</span><small class="global-workout-label">Workout</small></button>
+      <button data-route-button="log"><span>▰</span><small>Strength</small></button>
+      <button data-route-button="progress"><span>↗</span><small>Progress</small></button>
+    </nav>
+    <section class="tutorial-overlay" id="tutorialOverlay" aria-modal="true" role="dialog" aria-labelledby="tutorialTitle" hidden>
+      <div class="tutorial-card">
+        <button class="tutorial-close" id="tutorialClose" aria-label="Close tutorial">×</button>
+        <div class="tutorial-visual"><span id="tutorialIcon">✦</span><div class="tutorial-mini-map" id="tutorialMiniMap"><i></i><i></i><i></i><i></i><i></i></div></div>
+        <div class="tutorial-content">
+          <p class="eyebrow" id="tutorialStepLabel">Getting started · 1 of 5</p>
+          <h2 id="tutorialTitle">Welcome to RepRoot.</h2>
+          <p id="tutorialCopy">Your account begins completely empty. Add only the training you actually complete.</p>
+          <div class="tutorial-tip" id="tutorialTip">Your records are stored privately in this browser.</div>
+          <div class="tutorial-footer">
+            <div class="tutorial-dots" id="tutorialDots"></div>
+            <div><button class="text-button" id="tutorialPrevious">Back</button><button class="button button-primary" id="tutorialNext">Next →</button></div>
+          </div>
+        </div>
+      </div>
+    </section>
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+    <script src="app.js"></script>
+  </body>
+</html>

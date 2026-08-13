@@ -1,0 +1,14 @@
+{
+  "name": "RepRoot Training Tracker",
+  "short_name": "RepRoot",
+  "description": "Track strength, cardio, stamina, muscle volume, recovery, and personal records.",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f4f8f6",
+  "theme_color": "#283f3b",
+  "orientation": "portrait-primary",
+  "icons": [
+    { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ]
+}
