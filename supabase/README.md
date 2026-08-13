@@ -1,23 +1,25 @@
-# Optional cloud setup
+# RepRoot cloud setup
 
-The shipped app deliberately remains local-only until real project credentials exist. The schema here is the backend boundary for adding multi-device accounts and private partner links without putting a privileged database key in the browser.
+RepRoot is connected to Supabase project `syfiwpmsoruirefeksbk` using its browser-safe publishable key. Authentication sessions and version 4 training snapshots now sync across devices while local storage remains an offline cache.
 
-## Prepare the project
+## Dashboard configuration
 
-1. Create a Supabase project.
-2. Run [`schema.sql`](schema.sql) in the Supabase SQL editor.
-3. In Authentication, configure the deployed GitHub Pages URL as the site URL and redirect URL.
-4. Copy the project URL and **publishable/anon** key. Never put a `service_role` key in this repository or any browser code.
-5. Connect the app to `supabase-js`, use `signUp` / `signInWithPassword`, and read or upsert one `training_snapshots` row per signed-in user.
+1. Run [`schema.sql`](schema.sql) in the Supabase SQL editor.
+2. Under **Authentication → URL Configuration**, use `https://manpazito.github.io/RepRoot/` for the production Site URL and allow `https://manpazito.github.io/RepRoot/**` as a redirect URL.
+3. Keep email/password authentication enabled.
+4. For the initial private rollout, disable **Confirm Email**. Supabase's built-in mailer is restricted and may not deliver to someone outside the project organization. Configure custom SMTP before enabling confirmations and password-recovery email for general users.
+5. After the intended users have accounts, optionally disable new user signups in Supabase.
 
-The table policies use `auth.uid()` so browser clients can access only their own profile and training payload. Partner rows are visible only to the two linked users, and only the invited user can change a pending link's status. A production invitation flow should resolve an email to a user ID inside a server-side function or Edge Function so account email addresses are never exposed to arbitrary clients.
+Never add an `sb_secret_` or legacy `service_role` key to browser code. The included `sb_publishable_` key identifies the project but does not bypass row-level security.
 
-Relevant official references:
+## Storage behavior
+
+The browser reads and upserts only the `training_snapshots` row whose `user_id` matches `auth.uid()`. Anonymous reads return no rows and anonymous writes are rejected. The snapshot contains routines, custom exercises, settings, strength/cardio logs, sessions, and an active workout.
+
+Partner links are provisioned by the schema but not yet exposed in the UI. A future invitation flow should resolve email addresses inside a server-side Edge Function rather than exposing account lookup to browser clients.
+
+Official references:
 
 - [Password-based authentication](https://supabase.com/docs/guides/auth/passwords)
-- [Managing user profile data](https://supabase.com/docs/guides/auth/managing-user-data)
+- [API key types](https://supabase.com/docs/guides/getting-started/api-keys)
 - [Row Level Security](https://supabase.com/docs/guides/database/postgres/row-level-security)
-
-## Migration behavior
-
-The first cloud sign-in should offer to upload the current version 4 backup payload. Do not silently merge two histories: duplicate set IDs and conflicting edits need an explicit newest-write or user-choice policy. Keep local storage as an offline cache after cloud sync is enabled.
