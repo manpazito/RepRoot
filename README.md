@@ -1,48 +1,62 @@
-# RepRoot — Gym Muscle Group Tracker
+# RepRoot — phone-first training tracker
 
-RepRoot is a self-contained, phone-first training tracker. It provides separate Strength and Cardio areas, a live Workout Mode, a machine/free-weight exercise database, muscle-group volume and recovery estimates, personal-record tracking, stamina trends, and CSV/JSON exports.
+RepRoot is an installable strength and cardio tracker with live workout logging, reusable routines, per-set history, muscle-group volume, conservative recovery context, progress charts, and portable backups. It has no build step and works offline after its first successful load.
 
-## Run it
+## Run locally
 
-No install or build step is required. Open `index.html` directly in a modern browser, or serve the folder locally:
+Serve the repository so browser security features and the service worker are available:
 
 ```bash
 python3 -m http.server 8080
 ```
 
-Then visit `http://localhost:8080`.
+Open `http://localhost:8080`. Avoid opening `index.html` as a `file://` URL because secure sign-in APIs may be unavailable there.
 
-For phone use, deploy this folder to any static HTTPS host. In Safari use **Share → Add to Home Screen**; in Chrome use **Install app**. RepRoot includes a web-app manifest and offline app shell, so it launches full-screen and remains available after its first successful load. Training data stays on that browser/device unless exported.
+## Put it on your phone
 
-## How to use it
+The included GitHub Pages workflow deploys every push to `main`.
 
-1. Create an on-device account with your name, email, and a password of at least eight characters. Every new account begins with zero training data. The first-run tutorial explains the main workflow and can be replayed from **How to use**.
-2. Use the phone's bottom tabs to move between **Home**, **Cardio**, **Workout**, **Strength**, and **Progress**.
-3. Press **Start workout** to begin the live timer. The global play symbol becomes a pause symbol while the workout is active, then becomes play again when paused. Select a movement and tap **Complete set** after each set. The muscle map gets brighter as direct sets accumulate. Finish & save converts completed sets into permanent strength logs.
-4. In **Strength**, enter a completed machine, cable, barbell, dumbbell, or bodyweight exercise directly. The primary muscle and movement pattern are filled automatically but can be adjusted.
-5. In **Cardio**, choose running, cycling, swimming, walking, rowing, hiking, elliptical, or stair climbing. Log duration, activity-specific distance, effort, heart rate, and notes. Pace and stamina trends are calculated automatically.
-6. Open **Exercises** to filter the movement catalog by equipment, primary muscle, or movement pattern. Click the `+` on any row to log it.
-7. Open **Home** for weekly load, working sets, muscle coverage, and recovery estimates. Open **Progress** for working-weight charts, estimated 1RM records, and complete strength history.
-8. Export Strength or Cardio CSV files from their history panels, or use the sidebar download icon to create a full JSON backup.
+1. Merge the app branch into `main` on GitHub.
+2. In the repository, open **Settings → Pages** and set **Source** to **GitHub Actions**.
+3. After the **Deploy RepRoot to GitHub Pages** action finishes, open the Pages URL on your phone.
+4. On iPhone, choose **Share → Add to Home Screen**. On Android, use **Install app** or **Add to Home screen**.
 
-## Data architecture
+The manifest, Apple touch icon, offline shell, safe-area navigation, and phone-sized controls are already included.
 
-The app uses these core records in `app.js`:
+## Account behavior
 
-- `Account`: `id`, `name`, `email`, `passwordSalt`, `passwordHash`, `tutorialComplete`, `createdAt`
-- `Exercise`: `id`, `name`, `primary`, `movement`, `equipment`
-- `StrengthLog`: `id`, `date`, `exerciseId`, `muscle`, `sets`, `reps`, `weight`, `notes`, `createdAt`
-- `CardioLog`: `id`, `date`, `activityId`, `duration`, `distance`, `effort`, `heartRate`, `notes`, `createdAt`
-- `WorkoutSession`: `id`, `date`, `startedAt`, `durationSeconds`, `setCount`, `volume`, `muscles`
+Accounts currently live only in the browser or installed app where they were created. Passwords are derived with PBKDF2 and never stored as plain text, and each local profile has isolated data. Sign-out and sign-in work on the same browser and survive reloads.
 
-Accounts, training records, and an in-progress Workout Mode session are stored locally in the browser. Passwords are derived with PBKDF2 and are never stored in plaintext. Each account receives isolated storage. This lets a live workout survive navigation, sign-out, or an accidental refresh on the same device. Strength volume is calculated as `sets × reps × weight`. Estimated 1RM uses the Epley formula: `weight × (1 + reps / 30)`.
+This also means an account created on a laptop will not exist automatically on a phone, and you and your partner cannot share routines across devices yet. Use **Settings & backup → Export full backup** regularly. A JSON backup can be restored into another RepRoot installation without importing any password.
 
-This on-device account layer is appropriate for a private static deployment but is not a replacement for server-side authentication or cloud sync. A multi-device public deployment should use an authenticated backend and a managed database. Clearing browser storage removes local accounts and logs, so export backups regularly.
+The optional, row-level-secured Supabase foundation for real multi-device auth and partner links is documented in [`supabase/README.md`](supabase/README.md). It still needs a Supabase project URL and publishable key before the app can safely switch from local accounts.
 
-Recovery is a simple planning estimate—not medical advice. It combines elapsed time since the latest direct session with current weekly set load:
+## Training workflow
 
-- **Ready:** at least 60 hours since the latest session
-- **Recovering:** 30–60 hours
-- **Rest advised:** less than 30 hours, or 20+ weekly direct sets
+1. Create an on-device account with a password of at least eight characters.
+2. Open **Workout**, choose Push, Pull, Legs, Full body, or create your own routine.
+3. Log each completed set with its weight, reps, warm-up/working type, and reps in reserve. The rest timer starts automatically and the latest performance is shown before the next set.
+4. Use **Finish & save** to preserve every individual set. Warm-ups remain in the session but do not inflate working-set volume.
+5. Use **Strength** for a quick multi-set entry, **Cardio** for endurance work, and **Exercises → New exercise** for movements not in the built-in library.
+6. Use **Settings & backup** to choose pounds or kilograms, set a weekly per-muscle target, choose a default rest interval, export data, or restore a backup.
 
-No workout or cardio records are seeded. Use **Clear training data** on the Progress page to return the active account to zero without deleting the account itself.
+Secondary muscles receive half-set credit on the weekly overview; the primary muscle receives full credit. Progress is compared with estimated 1RM using the Epley formula. These estimates are training context, not medical or readiness diagnoses.
+
+## Data model
+
+- `StrengthLog` retains legacy summary fields and adds `setDetails[]` with weight, reps, RIR, set type, and completion time.
+- `WorkoutSession` stores timing, routine, working/warm-up counts, volume, and muscle groups.
+- `Routine` stores an ordered list of exercise IDs.
+- `Exercise` supports built-in and account-scoped custom movements with primary and secondary muscles.
+- `Settings` stores display unit, weekly set target, and default rest interval.
+
+Weights are normalized to pounds internally so switching display units does not rewrite history. Version 4 JSON backups include strength, cardio, sessions, routines, custom exercises, and preferences. Older summary-only strength records are expanded in memory for backward compatibility.
+
+## Important files
+
+- `index.html` — app structure and accessible controls
+- `styles.css` — responsive UI and mobile workout layout
+- `app.js` — local auth, storage, training calculations, and interaction logic
+- `service-worker.js` / `manifest.webmanifest` — installable offline PWA shell
+- `.github/workflows/pages.yml` — static phone deployment
+- `supabase/schema.sql` — optional hosted-data schema with row-level security
