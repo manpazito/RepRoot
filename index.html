@@ -4,12 +4,14 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="theme-color" content="#283f3b" />
+    <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="apple-mobile-web-app-title" content="RepRoot" />
     <title>RepRoot — Muscle Group Tracker</title>
     <link rel="manifest" href="manifest.webmanifest" />
     <link rel="icon" href="icon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="icon-180.png" />
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body class="auth-locked">
@@ -38,7 +40,7 @@
             <p class="auth-error" id="authError" role="alert"></p>
             <button class="button button-primary auth-submit" type="submit"><span id="authSubmitLabel">Create account</span> →</button>
           </form>
-          <p class="local-account-note"><strong>On-device profile</strong> · Your password is hashed and training data stays in this browser. Export a backup before clearing browser data.</p>
+          <p class="local-account-note"><strong>On-device profile</strong> · This sign-in works only in this installed app or browser. It does not sync to another phone yet. Export a backup regularly.</p>
         </div>
       </div>
     </section>
@@ -53,10 +55,10 @@
         <nav class="side-nav">
           <p class="nav-label">Workspace</p>
           <a class="nav-item active" href="#overview" data-route="overview">
-            <span class="nav-icon">⌂</span><span>Overview</span>
+            <span class="nav-icon" aria-hidden="true"><i class="home-icon"></i></span><span>Overview</span>
           </a>
           <a class="nav-item" href="#log" data-route="log">
-            <span class="nav-icon">▰</span><span>Strength</span>
+            <span class="nav-icon" aria-hidden="true"><i class="strength-icon"></i></span><span>Strength</span>
           </a>
           <a class="nav-item" href="#cardio" data-route="cardio">
             <span class="nav-icon">♥</span><span>Cardio</span>
@@ -70,6 +72,9 @@
           <a class="nav-item" href="#progress" data-route="progress">
             <span class="nav-icon">↗</span><span>Progress</span>
           </a>
+          <a class="nav-item" href="#settings" data-route="settings">
+            <span class="nav-icon">⚙</span><span>Settings & backup</span>
+          </a>
           <button class="nav-item nav-button" id="tutorialButton">
             <span class="nav-icon">?</span><span>How to use</span>
           </button>
@@ -77,8 +82,8 @@
 
         <div class="sidebar-tip">
           <span class="tip-icon">↯</span>
-          <p><strong>Recovery tip</strong></p>
-          <p>Most muscle groups benefit from 48–72 hours before another hard session.</p>
+          <p><strong>Recovery reminder</strong></p>
+          <p>Use recent training, performance, and how you feel together when planning the next hard session.</p>
         </div>
 
         <div class="sidebar-footer">
@@ -95,7 +100,7 @@
           <div class="breadcrumb"><span>Training</span><b>/</b><strong id="pageCrumb">Overview</strong></div>
           <div class="top-actions">
             <span class="live-pill"><i></i> Local data</span>
-            <button class="button button-primary compact global-workout-button" data-route-button="workout"><span class="global-workout-icon">▶</span><span class="global-workout-label">Start workout</span></button>
+            <button class="button button-primary compact top-workout-button" id="topWorkoutButton" data-route-button="workout"><span>▶</span><span id="topWorkoutLabel">Open workout</span></button>
           </div>
         </header>
 
@@ -118,7 +123,7 @@
               <article class="stat-card accent-card">
                 <div class="stat-heading"><span>Weekly volume</span><span class="stat-icon">↗</span></div>
                 <strong id="weeklyVolume">0</strong>
-                <p>lb lifted this week</p>
+                <p id="weeklyVolumeUnit">lb lifted this week</p>
                 <div class="mini-bars" id="volumeBars" aria-hidden="true"></div>
               </article>
               <article class="stat-card">
@@ -129,7 +134,7 @@
               </article>
               <article class="stat-card">
                 <div class="stat-heading"><span>Muscles trained</span><span class="stat-icon neutral">◎</span></div>
-                <strong><span id="musclesTrained">0</span><small>/9</small></strong>
+                <strong><span id="musclesTrained">0</span><small>/10</small></strong>
                 <p id="muscleCoverageCopy">Start logging to build coverage</p>
                 <div class="dot-track" id="muscleDots"></div>
               </article>
@@ -146,7 +151,7 @@
                 <h2>Muscle balance & recovery</h2>
                 <p>Volume is measured in working sets. Recovery is estimated from your latest session.</p>
               </div>
-              <div class="legend"><span><i class="ready"></i>Ready</span><span><i class="soon"></i>Recovering</span><span><i class="rest"></i>Rest advised</span></div>
+              <div class="legend"><span><i class="ready"></i>Likely ready</span><span><i class="soon"></i>May be recovering</span><span><i class="rest"></i>Recently trained</span></div>
             </div>
             <div class="muscle-grid" id="muscleGrid"></div>
 
@@ -163,14 +168,14 @@
                 <p class="eyebrow">Training insight</p>
                 <h2 id="insightTitle">Your balance looks solid.</h2>
                 <p id="insightCopy">Keep logging sessions to receive weekly volume and recovery guidance.</p>
-                  <button class="button button-dark" data-route-button="workout">Start a workout</button>
+                  <button class="button button-dark" data-start-workout>Start a workout</button>
               </article>
             </div>
           </section>
 
           <section class="page" id="logPage" data-page="log">
             <div class="training-switch" aria-label="Training type">
-              <button class="active" data-route-button="log"><span>▰</span>Strength training</button>
+              <button class="active" data-route-button="log"><span class="strength-icon" aria-hidden="true"></span>Strength training</button>
               <button data-route-button="cardio"><span>♥</span>Cardio</button>
             </div>
             <div class="page-title-row">
@@ -186,7 +191,8 @@
                   <label><span>Movement type</span><input id="logMovement" type="text" readonly /></label>
                   <label><span>Sets *</span><input type="number" id="logSets" min="1" max="20" value="3" required /></label>
                   <label><span>Reps per set *</span><input type="number" id="logReps" min="1" max="100" value="8" required /></label>
-                  <label><span>Weight (lb) *</span><input type="number" id="logWeight" min="0" step="0.5" value="45" required /></label>
+                  <label><span id="logWeightLabel">Weight (lb) *</span><input type="number" id="logWeight" min="0" step="0.5" value="45" required /></label>
+                  <label><span>Reps in reserve</span><select id="logRir"><option value="">Not recorded</option><option value="0">0 — max effort</option><option value="1">1 RIR</option><option value="2" selected>2 RIR</option><option value="3">3 RIR</option><option value="4">4+ RIR</option></select></label>
                   <label class="full-span"><span>Notes <em>optional</em></span><textarea id="logNotes" rows="4" placeholder="RPE, tempo, setup cues, how it felt…"></textarea></label>
                 </div>
                 <div class="form-footer">
@@ -208,7 +214,7 @@
 
           <section class="page" id="cardioPage" data-page="cardio">
             <div class="training-switch" aria-label="Training type">
-              <button data-route-button="log"><span>▰</span>Strength training</button>
+              <button data-route-button="log"><span class="strength-icon" aria-hidden="true"></span>Strength training</button>
               <button class="active" data-route-button="cardio"><span>♥</span>Cardio</button>
             </div>
             <div class="page-title-row cardio-title">
@@ -255,6 +261,24 @@
               <div class="workout-clock"><span id="workoutStatus">Ready</span><strong id="workoutTimer">00:00</strong></div>
             </div>
 
+            <section class="panel routine-launcher">
+              <div>
+                <p class="eyebrow">Workout plan</p>
+                <select id="workoutRoutineSelect" aria-label="Choose a workout routine"></select>
+              </div>
+              <div class="routine-actions">
+                <button class="button button-primary" id="startRoutineButton">Start routine</button>
+                <button class="button button-outline" id="createRoutineButton">New routine</button>
+                <button class="text-button" id="deleteRoutineButton">Delete</button>
+              </div>
+              <div class="routine-preview" id="routinePreview"></div>
+            </section>
+
+            <div class="rest-timer" id="restTimer" hidden>
+              <div><span>Rest timer</span><strong id="restTimerValue">01:30</strong></div>
+              <button id="restTimerSkip">Skip</button>
+            </div>
+
             <div class="workout-mode-grid">
               <section class="panel live-set-panel">
                 <div class="live-indicator"><i></i><span id="liveIndicatorText">Session not started</span></div>
@@ -262,9 +286,15 @@
                 <p class="muted-copy">Pick an exercise, enter what you completed, then tap the set button.</p>
                 <div class="live-fields">
                   <label><span>Exercise</span><select id="liveExercise"></select></label>
+                  <div class="previous-performance" id="previousPerformance">No previous sets for this exercise.</div>
                   <div class="live-number-row">
-                    <label><span>Weight (lb)</span><input id="liveWeight" inputmode="decimal" type="number" min="0" step="0.5" value="45" /></label>
+                    <label><span id="liveWeightLabel">Weight (lb)</span><input id="liveWeight" inputmode="decimal" type="number" min="0" step="0.5" value="45" /></label>
                     <label><span>Reps</span><input id="liveReps" inputmode="numeric" type="number" min="1" max="100" value="10" /></label>
+                  </div>
+                  <div class="live-meta-row">
+                    <label><span>Set type</span><select id="liveSetType"><option value="working" selected>Working set</option><option value="warmup">Warm-up</option></select></label>
+                    <label><span>Reps in reserve</span><select id="liveRir"><option value="">—</option><option value="0">0</option><option value="1">1</option><option value="2" selected>2</option><option value="3">3</option><option value="4">4+</option></select></label>
+                    <label><span>Rest</span><select id="liveRestSeconds"><option value="60">1:00</option><option value="90" selected>1:30</option><option value="120">2:00</option><option value="180">3:00</option></select></label>
                   </div>
                 </div>
                 <button class="complete-set-button" id="completeSetButton"><span>＋</span><strong>Complete set</strong><small id="completeSetMuscle">Chest</small></button>
@@ -287,6 +317,7 @@
                     <g class="muscle-zone" data-map-muscle="Biceps"><path d="M106 102 Q117 100 121 114 L107 154 96 150Z"/><path d="M214 102 Q203 100 199 114 L213 154 224 150Z"/></g>
                     <g class="muscle-zone" data-map-muscle="Triceps"><path d="M99 151 110 155 99 184 86 181Z"/><path d="M221 151 210 155 221 184 234 181Z"/></g>
                     <g class="muscle-zone" data-map-muscle="Core"><path d="M138 126 Q160 136 182 126 L181 193 Q160 207 139 193Z"/></g>
+                    <g class="muscle-zone" data-map-muscle="Glutes"><path d="M135 190 Q160 178 185 190 L187 218 Q160 231 133 218Z"/></g>
                     <g class="muscle-zone" data-map-muscle="Quads"><path d="M132 200 157 207 153 277 132 274Z"/><path d="M188 200 163 207 167 277 188 274Z"/></g>
                     <g class="muscle-zone" data-map-muscle="Hamstrings"><path d="M132 277 153 281 150 327 132 327Z"/><path d="M188 277 167 281 170 327 188 327Z"/></g>
                     <g class="muscle-zone" data-map-muscle="Calves"><path d="M132 327 150 330 148 374 135 374Z"/><path d="M188 327 170 330 172 374 185 374Z"/></g>
@@ -306,7 +337,7 @@
           <section class="page" id="exercisesPage" data-page="exercises">
             <div class="page-title-row">
               <div><p class="eyebrow">Exercise database</p><h1>Find your movement.</h1><p>A curated library organized by primary muscle and movement pattern.</p></div>
-              <div class="count-badge"><strong id="exerciseCount">0</strong><span>movements</span></div>
+              <div class="page-title-actions"><button class="button button-primary" id="newExerciseButton">New exercise</button><div class="count-badge"><strong id="exerciseCount">0</strong><span>movements</span></div></div>
             </div>
             <div class="filter-bar panel">
               <label class="search-field"><span>⌕</span><input id="exerciseSearch" type="search" placeholder="Search exercises or equipment…" /></label>
@@ -327,14 +358,14 @@
             <div class="progress-grid">
               <article class="panel chart-panel">
                 <div class="panel-heading">
-                  <div><p class="eyebrow">Weight progression</p><h2 id="chartTitle">Exercise trend</h2></div>
+                  <div><p class="eyebrow">Estimated strength</p><h2 id="chartTitle">Exercise trend</h2></div>
                   <select id="progressExercise" aria-label="Select exercise"></select>
                 </div>
                 <div class="chart-summary" id="chartSummary"></div>
                 <div class="chart-wrap" id="progressChart" aria-label="Weight progression chart"></div>
               </article>
               <article class="panel records-panel">
-                <div class="panel-heading"><div><p class="eyebrow">Personal records</p><h2>Top lifts</h2></div><span class="trophy">★</span></div>
+                <div class="panel-heading"><div><p class="eyebrow">Personal records</p><h2>Recent bests</h2></div><span class="trophy">★</span></div>
                 <div id="personalRecords"></div>
               </article>
             </div>
@@ -349,16 +380,65 @@
               </div>
             </article>
           </section>
+
+          <section class="page" id="settingsPage" data-page="settings">
+            <div class="page-title-row">
+              <div><p class="eyebrow">Preferences & data</p><h1>Make RepRoot yours.</h1><p>Choose training defaults, protect your history, and understand where your data lives.</p></div>
+            </div>
+            <div class="settings-grid">
+              <form class="panel settings-panel" id="settingsForm">
+                <div class="panel-heading"><div><p class="eyebrow">Training defaults</p><h2>Preferences</h2></div></div>
+                <label><span>Weight unit</span><select id="weightUnit"><option value="lb">Pounds (lb)</option><option value="kg">Kilograms (kg)</option></select></label>
+                <label><span>Weekly working-set target per muscle</span><input id="weeklySetTarget" type="number" min="4" max="30" value="10" /></label>
+                <label><span>Default rest timer</span><select id="defaultRestSeconds"><option value="60">1 minute</option><option value="90">1 minute 30 seconds</option><option value="120">2 minutes</option><option value="180">3 minutes</option></select></label>
+                <button class="button button-primary" type="submit">Save preferences</button>
+              </form>
+              <section class="panel settings-panel">
+                <div class="panel-heading"><div><p class="eyebrow">Account status</p><h2>On-device profile</h2></div><span class="local-badge">Local only</span></div>
+                <p>Your profile currently lives in this installed app or browser. It cannot sign in on another phone until cloud sync is configured.</p>
+                <div class="data-actions">
+                  <button class="button button-outline" id="settingsExportButton">Export full backup</button>
+                  <label class="button button-outline import-button">Restore backup<input id="importBackupInput" type="file" accept="application/json,.json" /></label>
+                </div>
+                <p class="settings-note">Restoring replaces the current profile's training data after confirmation.</p>
+              </section>
+              <section class="panel settings-panel partner-panel">
+                <div class="panel-heading"><div><p class="eyebrow">Partner features</p><h2>Train together, privately.</h2></div></div>
+                <p>Cloud accounts will enable partner invitations, shared routines, encouragement, and optional progress sharing. Workout history remains private by default.</p>
+                <button class="button button-outline" disabled>Cloud setup required</button>
+              </section>
+            </div>
+          </section>
         </div>
       </main>
     </div>
     <nav class="mobile-tabbar" aria-label="Mobile navigation">
-      <button class="active" data-route-button="overview"><span>⌂</span><small>Home</small></button>
+      <button class="active" data-route-button="overview"><span aria-hidden="true"><i class="home-icon"></i></span><small>Home</small></button>
       <button data-route-button="cardio"><span>♥</span><small>Cardio</small></button>
-      <button class="workout-tab global-workout-button" data-route-button="workout"><span class="global-workout-icon">▶</span><small class="global-workout-label">Workout</small></button>
-      <button data-route-button="log"><span>▰</span><small>Strength</small></button>
+      <button class="workout-tab" data-route-button="workout"><span>▶</span><small>Workout</small></button>
+      <button data-route-button="log"><span aria-hidden="true"><i class="strength-icon"></i></span><small>Strength</small></button>
       <button data-route-button="progress"><span>↗</span><small>Progress</small></button>
     </nav>
+    <dialog class="app-dialog" id="routineDialog">
+      <form method="dialog" id="routineForm">
+        <div class="dialog-heading"><div><p class="eyebrow">Workout template</p><h2>Create a routine</h2></div><button class="dialog-close" type="button" data-close-dialog="routineDialog" aria-label="Close">×</button></div>
+        <label><span>Routine name</span><input id="routineName" maxlength="40" placeholder="e.g. Upper body" required /></label>
+        <p class="field-label">Choose exercises</p>
+        <div class="choice-grid" id="routineExerciseChoices"></div>
+        <div class="dialog-actions"><button class="button button-outline" type="button" data-close-dialog="routineDialog">Cancel</button><button class="button button-primary" id="saveRoutineButton" type="submit">Save routine</button></div>
+      </form>
+    </dialog>
+    <dialog class="app-dialog" id="exerciseDialog">
+      <form method="dialog" id="customExerciseForm">
+        <div class="dialog-heading"><div><p class="eyebrow">Exercise library</p><h2>Add a custom exercise</h2></div><button class="dialog-close" type="button" data-close-dialog="exerciseDialog" aria-label="Close">×</button></div>
+        <label><span>Name</span><input id="customExerciseName" maxlength="60" required /></label>
+        <div class="dialog-form-grid"><label><span>Primary muscle</span><select id="customExercisePrimary"></select></label><label><span>Equipment</span><input id="customExerciseEquipment" maxlength="30" placeholder="Machine, cable…" required /></label></div>
+        <label><span>Movement pattern</span><input id="customExerciseMovement" maxlength="40" placeholder="Horizontal push" required /></label>
+        <p class="field-label">Secondary muscles</p>
+        <div class="choice-grid compact-choices" id="customExerciseSecondary"></div>
+        <div class="dialog-actions"><button class="button button-outline" type="button" data-close-dialog="exerciseDialog">Cancel</button><button class="button button-primary" id="saveCustomExerciseButton" type="submit">Add exercise</button></div>
+      </form>
+    </dialog>
     <section class="tutorial-overlay" id="tutorialOverlay" aria-modal="true" role="dialog" aria-labelledby="tutorialTitle" hidden>
       <div class="tutorial-card">
         <button class="tutorial-close" id="tutorialClose" aria-label="Close tutorial">×</button>
