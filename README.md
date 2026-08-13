@@ -1,6 +1,6 @@
 # RepRoot — phone-first training tracker
 
-RepRoot is an installable strength and cardio tracker with live workout logging, reusable routines, per-set history, muscle-group volume, conservative recovery context, progress charts, and portable backups. It has no build step and works offline after its first successful load.
+RepRoot is an installable strength and cardio tracker with live workout logging, reusable Planet Fitness-oriented routines, per-set history, muscle-group volume, conservative recovery context, progress charts, and portable backups. It has no build step and works offline after its first successful load.
 
 ## Run locally
 
@@ -31,10 +31,12 @@ Training is cached locally after sign-in, so an interrupted connection does not 
 
 The first cloud login checks for a matching legacy on-device account. When the legacy password matches the cloud password, its training is merged into the authenticated snapshot without deleting the original local copy. A JSON export/import remains the fallback for accounts using different passwords.
 
+The built-in library prioritizes the selectorized machines, cable towers, Smith machines, dumbbells, and cardio equipment commonly listed by Planet Fitness. Club inventory varies, so the searchable picker includes equipment filters and custom exercises remain available for location-specific machines.
+
 ## Training workflow
 
 1. Create a cloud account with a password of at least 10 characters.
-2. Open **Workout**, choose Push, Pull, Legs, Full body, or create your own routine.
+2. Open **Workout** and choose a Planet Fitness machine, Smith/dumbbell, or lower-body routine—or create your own.
 3. Log each completed set with its weight, reps, warm-up/working type, and reps in reserve. The rest timer starts automatically and the latest performance is shown before the next set.
 4. Use **Finish & save** to preserve every individual set. Warm-ups remain in the session but do not inflate working-set volume.
 5. Use **Strength** for a quick multi-set entry, **Cardio** for endurance work, and **Exercises → New exercise** for movements not in the built-in library.

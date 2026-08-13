@@ -22,8 +22,9 @@ const CLOUD_DIRTY_KEY = "reproot-cloud-dirty-v1";
 const LEGACY_MIGRATION_KEY = "reproot-legacy-migrated-v1";
 const SUPABASE_URL = "https://syfiwpmsoruirefeksbk.supabase.co";
 const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_wbKOPuzgRR-dRTBzto4akA_2om3H9fh";
-const MUSCLE_GROUPS = ["Chest", "Back", "Quads", "Hamstrings", "Glutes", "Shoulders", "Biceps", "Triceps", "Core", "Calves"];
-const MUSCLE_ABBR = { Chest: "CH", Back: "BK", Quads: "QD", Hamstrings: "HM", Glutes: "GL", Shoulders: "SH", Biceps: "BI", Triceps: "TR", Core: "CR", Calves: "CV" };
+const MUSCLE_GROUPS = ["Chest", "Back", "Quads", "Hamstrings", "Glutes", "Adductors", "Shoulders", "Biceps", "Triceps", "Core", "Calves"];
+const LOWER_BODY_MUSCLES = ["Quads", "Hamstrings", "Glutes", "Adductors", "Calves"];
+const MUSCLE_ABBR = { Chest: "CH", Back: "BK", Quads: "QD", Hamstrings: "HM", Glutes: "GL", Adductors: "AD", Shoulders: "SH", Biceps: "BI", Triceps: "TR", Core: "CR", Calves: "CV" };
 
 const EXERCISES = [
   { id: "barbell-bench", name: "Barbell Bench Press", primary: "Chest", movement: "Horizontal push", equipment: "Barbell" },
@@ -32,53 +33,82 @@ const EXERCISES = [
   { id: "push-up", name: "Push-Up", primary: "Chest", movement: "Horizontal push", equipment: "Bodyweight" },
   { id: "machine-chest-press", name: "Machine Chest Press", primary: "Chest", movement: "Horizontal push", equipment: "Machine" },
   { id: "pec-deck", name: "Pec Deck Fly", primary: "Chest", movement: "Adduction", equipment: "Machine" },
+  { id: "smith-bench-press", name: "Smith Machine Bench Press", primary: "Chest", movement: "Horizontal push", equipment: "Smith machine" },
+  { id: "smith-incline-press", name: "Smith Machine Incline Press", primary: "Chest", movement: "Incline push", equipment: "Smith machine" },
+  { id: "dumbbell-bench-press", name: "Dumbbell Bench Press", primary: "Chest", movement: "Horizontal push", equipment: "Dumbbells" },
   { id: "pull-up", name: "Pull-Up", primary: "Back", movement: "Vertical pull", equipment: "Bodyweight" },
   { id: "lat-pulldown", name: "Lat Pulldown", primary: "Back", movement: "Vertical pull", equipment: "Cable" },
   { id: "barbell-row", name: "Barbell Row", primary: "Back", movement: "Horizontal pull", equipment: "Barbell" },
   { id: "seated-row", name: "Seated Cable Row", primary: "Back", movement: "Horizontal pull", equipment: "Cable" },
   { id: "machine-high-row", name: "Machine High Row", primary: "Back", movement: "Horizontal pull", equipment: "Machine" },
   { id: "assisted-pull-up", name: "Assisted Pull-Up", primary: "Back", movement: "Vertical pull", equipment: "Machine" },
+  { id: "machine-row", name: "Seated Machine Row", primary: "Back", movement: "Horizontal pull", equipment: "Machine" },
+  { id: "chest-supported-row", name: "Chest-Supported Machine Row", primary: "Back", movement: "Horizontal pull", equipment: "Machine" },
+  { id: "straight-arm-pulldown", name: "Straight-Arm Cable Pulldown", primary: "Back", movement: "Shoulder extension", equipment: "Cable" },
+  { id: "one-arm-db-row", name: "One-Arm Dumbbell Row", primary: "Back", movement: "Horizontal pull", equipment: "Dumbbells" },
   { id: "back-squat", name: "Barbell Back Squat", primary: "Quads", movement: "Squat", equipment: "Barbell" },
   { id: "leg-press", name: "Leg Press", primary: "Quads", movement: "Squat", equipment: "Machine" },
   { id: "bulgarian-split", name: "Bulgarian Split Squat", primary: "Quads", movement: "Unilateral squat", equipment: "Dumbbells" },
   { id: "leg-extension", name: "Leg Extension", primary: "Quads", movement: "Knee extension", equipment: "Machine" },
   { id: "hack-squat", name: "Hack Squat", primary: "Quads", movement: "Squat", equipment: "Machine" },
+  { id: "smith-squat", name: "Smith Machine Squat", primary: "Quads", movement: "Squat", equipment: "Smith machine" },
+  { id: "smith-split-squat", name: "Smith Machine Split Squat", primary: "Quads", movement: "Unilateral squat", equipment: "Smith machine" },
+  { id: "goblet-squat", name: "Goblet Squat", primary: "Quads", movement: "Squat", equipment: "Dumbbell" },
+  { id: "walking-lunge", name: "Dumbbell Walking Lunge", primary: "Quads", movement: "Unilateral squat", equipment: "Dumbbells" },
   { id: "romanian-deadlift", name: "Romanian Deadlift", primary: "Hamstrings", movement: "Hip hinge", equipment: "Barbell" },
   { id: "leg-curl", name: "Lying Leg Curl", primary: "Hamstrings", movement: "Knee flexion", equipment: "Machine" },
   { id: "good-morning", name: "Good Morning", primary: "Hamstrings", movement: "Hip hinge", equipment: "Barbell" },
   { id: "seated-leg-curl", name: "Seated Leg Curl", primary: "Hamstrings", movement: "Knee flexion", equipment: "Machine" },
+  { id: "dumbbell-rdl", name: "Dumbbell Romanian Deadlift", primary: "Hamstrings", movement: "Hip hinge", equipment: "Dumbbells" },
+  { id: "smith-rdl", name: "Smith Machine Romanian Deadlift", primary: "Hamstrings", movement: "Hip hinge", equipment: "Smith machine" },
   { id: "barbell-hip-thrust", name: "Barbell Hip Thrust", primary: "Glutes", movement: "Hip extension", equipment: "Barbell", secondary: ["Hamstrings"] },
   { id: "cable-kickback", name: "Cable Glute Kickback", primary: "Glutes", movement: "Hip extension", equipment: "Cable", secondary: ["Hamstrings"] },
+  { id: "hip-abduction-machine", name: "Hip Abductor Machine", primary: "Glutes", movement: "Hip abduction", equipment: "Machine", aliases: ["Hip Abduction", "Abductors"] },
+  { id: "glute-drive-machine", name: "Glute Drive / Hip Thrust Machine", primary: "Glutes", movement: "Hip extension", equipment: "Machine", secondary: ["Hamstrings"] },
+  { id: "smith-hip-thrust", name: "Smith Machine Hip Thrust", primary: "Glutes", movement: "Hip extension", equipment: "Smith machine", secondary: ["Hamstrings"] },
+  { id: "hip-adduction-machine", name: "Hip Adductor Machine", primary: "Adductors", movement: "Hip adduction", equipment: "Machine", aliases: ["Hip Adduction", "Adductors"] },
   { id: "overhead-press", name: "Overhead Press", primary: "Shoulders", movement: "Vertical push", equipment: "Barbell" },
   { id: "lateral-raise", name: "Dumbbell Lateral Raise", primary: "Shoulders", movement: "Abduction", equipment: "Dumbbells" },
   { id: "reverse-fly", name: "Reverse Pec Deck", primary: "Shoulders", movement: "Horizontal abduction", equipment: "Machine" },
   { id: "face-pull", name: "Face Pull", primary: "Shoulders", movement: "External rotation", equipment: "Cable" },
   { id: "machine-shoulder-press", name: "Machine Shoulder Press", primary: "Shoulders", movement: "Vertical push", equipment: "Machine" },
+  { id: "cable-lateral-raise", name: "Cable Lateral Raise", primary: "Shoulders", movement: "Abduction", equipment: "Cable" },
+  { id: "dumbbell-rear-delt-fly", name: "Dumbbell Rear Delt Fly", primary: "Shoulders", movement: "Horizontal abduction", equipment: "Dumbbells" },
   { id: "barbell-curl", name: "Barbell Curl", primary: "Biceps", movement: "Elbow flexion", equipment: "Barbell" },
   { id: "hammer-curl", name: "Hammer Curl", primary: "Biceps", movement: "Elbow flexion", equipment: "Dumbbells" },
   { id: "preacher-curl", name: "Preacher Curl", primary: "Biceps", movement: "Elbow flexion", equipment: "EZ bar" },
   { id: "machine-curl", name: "Machine Biceps Curl", primary: "Biceps", movement: "Elbow flexion", equipment: "Machine" },
+  { id: "cable-curl", name: "Cable Biceps Curl", primary: "Biceps", movement: "Elbow flexion", equipment: "Cable" },
+  { id: "incline-db-curl", name: "Incline Dumbbell Curl", primary: "Biceps", movement: "Elbow flexion", equipment: "Dumbbells" },
   { id: "tricep-pushdown", name: "Triceps Pushdown", primary: "Triceps", movement: "Elbow extension", equipment: "Cable" },
   { id: "skull-crusher", name: "EZ-Bar Skull Crusher", primary: "Triceps", movement: "Elbow extension", equipment: "EZ bar" },
   { id: "close-grip-bench", name: "Close-Grip Bench Press", primary: "Triceps", movement: "Horizontal push", equipment: "Barbell" },
   { id: "assisted-dip", name: "Assisted Dip", primary: "Triceps", movement: "Vertical push", equipment: "Machine" },
+  { id: "rope-pushdown", name: "Rope Triceps Pushdown", primary: "Triceps", movement: "Elbow extension", equipment: "Cable" },
+  { id: "overhead-cable-extension", name: "Overhead Cable Triceps Extension", primary: "Triceps", movement: "Elbow extension", equipment: "Cable" },
   { id: "cable-crunch", name: "Cable Crunch", primary: "Core", movement: "Spinal flexion", equipment: "Cable" },
   { id: "hanging-leg-raise", name: "Hanging Leg Raise", primary: "Core", movement: "Hip flexion", equipment: "Bodyweight" },
   { id: "plank", name: "Weighted Plank", primary: "Core", movement: "Anti-extension", equipment: "Plate" },
   { id: "ab-crunch-machine", name: "Ab Crunch Machine", primary: "Core", movement: "Spinal flexion", equipment: "Machine" },
+  { id: "torso-rotation-machine", name: "Torso Rotation Machine", primary: "Core", movement: "Rotation", equipment: "Machine" },
+  { id: "pallof-press", name: "Cable Pallof Press", primary: "Core", movement: "Anti-rotation", equipment: "Cable" },
   { id: "standing-calf", name: "Standing Calf Raise", primary: "Calves", movement: "Plantar flexion", equipment: "Machine" },
-  { id: "seated-calf", name: "Seated Calf Raise", primary: "Calves", movement: "Plantar flexion", equipment: "Machine" }
+  { id: "seated-calf", name: "Seated Calf Raise", primary: "Calves", movement: "Plantar flexion", equipment: "Machine" },
+  { id: "calf-extension-machine", name: "Calf Extension Machine", primary: "Calves", movement: "Plantar flexion", equipment: "Machine" },
+  { id: "leg-press-calf-raise", name: "Leg Press Calf Raise", primary: "Calves", movement: "Plantar flexion", equipment: "Leg press" }
 ];
 
 const CARDIO_ACTIVITIES = [
-  { id: "running", name: "Running", icon: "⌁", unit: "miles" },
-  { id: "cycling", name: "Cycling", icon: "◉", unit: "miles" },
+  { id: "running", name: "Treadmill / Running", icon: "⌁", unit: "miles" },
+  { id: "cycling", name: "Upright / Indoor Bike", icon: "◉", unit: "miles" },
   { id: "swimming", name: "Swimming", icon: "≈", unit: "yards" },
-  { id: "walking", name: "Walking", icon: "♟", unit: "miles" },
+  { id: "walking", name: "Treadmill / Walking", icon: "♟", unit: "miles" },
   { id: "rowing", name: "Rowing", icon: "≋", unit: "meters" },
   { id: "hiking", name: "Hiking", icon: "⌃", unit: "miles" },
   { id: "elliptical", name: "Elliptical", icon: "∞", unit: "miles" },
-  { id: "stairs", name: "Stair Climber", icon: "▟", unit: "floors" }
+  { id: "arc-trainer", name: "Arc Trainer", icon: "⌒", unit: "miles" },
+  { id: "recumbent-bike", name: "Recumbent Bike", icon: "◒", unit: "miles" },
+  { id: "stairs", name: "Stair Climber / Stepmill", icon: "▟", unit: "floors" }
 ];
 
 const SECONDARY_BY_MOVEMENT = {
@@ -89,10 +119,12 @@ const SECONDARY_BY_MOVEMENT = {
 };
 
 const DEFAULT_ROUTINES = [
-  { id: "routine-push", name: "Push", exerciseIds: ["barbell-bench", "incline-db-press", "overhead-press", "lateral-raise", "tricep-pushdown"], builtIn: true },
-  { id: "routine-pull", name: "Pull", exerciseIds: ["lat-pulldown", "barbell-row", "seated-row", "face-pull", "hammer-curl"], builtIn: true },
-  { id: "routine-legs", name: "Legs", exerciseIds: ["back-squat", "romanian-deadlift", "barbell-hip-thrust", "leg-press", "leg-curl", "standing-calf"], builtIn: true },
-  { id: "routine-full-body", name: "Full body", exerciseIds: ["back-squat", "barbell-bench", "lat-pulldown", "romanian-deadlift", "overhead-press", "cable-crunch"], builtIn: true }
+  { id: "routine-pf-machine-legs", name: "PF Machine Legs", exerciseIds: ["leg-press", "leg-extension", "seated-leg-curl", "hip-adduction-machine", "hip-abduction-machine", "calf-extension-machine"], builtIn: true },
+  { id: "routine-pf-push", name: "PF Machine Push", exerciseIds: ["machine-chest-press", "pec-deck", "machine-shoulder-press", "cable-lateral-raise", "rope-pushdown"], builtIn: true },
+  { id: "routine-pf-pull", name: "PF Machine Pull", exerciseIds: ["lat-pulldown", "machine-row", "machine-high-row", "reverse-fly", "machine-curl"], builtIn: true },
+  { id: "routine-pf-full-body", name: "PF Machine Full Body", exerciseIds: ["leg-press", "machine-chest-press", "lat-pulldown", "seated-leg-curl", "machine-shoulder-press", "ab-crunch-machine"], builtIn: true },
+  { id: "routine-pf-glutes", name: "PF Glutes & Hamstrings", exerciseIds: ["smith-rdl", "glute-drive-machine", "seated-leg-curl", "hip-abduction-machine", "cable-kickback", "calf-extension-machine"], builtIn: true },
+  { id: "routine-pf-smith-upper", name: "PF Smith & Dumbbell Upper", exerciseIds: ["smith-incline-press", "one-arm-db-row", "dumbbell-bench-press", "lat-pulldown", "lateral-raise", "overhead-cable-extension"], builtIn: true }
 ];
 
 const DEFAULT_SETTINGS = { weightUnit: "lb", weeklySetTarget: 10, restSeconds: 90 };
@@ -101,7 +133,8 @@ const state = {
   logs: [], cardioLogs: [], sessions: [], activeWorkout: null, routines: [], customExercises: [], settings: { ...DEFAULT_SETTINGS },
   account: null, authMode: "create", tutorialStep: 0,
   selectedWeekStart: startOfWeek(new Date()), route: "overview", timerInterval: null, restTimerInterval: null, restTimerEnd: null,
-  cloudSession: null, cloudSyncTimer: null, isHydrating: false, migrationPassword: null
+  cloudSession: null, cloudSyncTimer: null, isHydrating: false, migrationPassword: null,
+  exercisePickerTarget: "liveExercise", exercisePickerFilter: "lower"
 };
 
 const TUTORIAL_STEPS = [
@@ -120,6 +153,11 @@ function endOfWeek(start) { const result = new Date(start); result.setDate(resul
 function formatNumber(value) { return Math.round(value).toLocaleString("en-US"); }
 function allExercises() { return [...EXERCISES, ...state.customExercises]; }
 function exerciseById(id) { return allExercises().find(exercise => exercise.id === id); }
+function withCurrentBuiltInRoutines(routines = []) {
+  const builtInIds = new Set(DEFAULT_ROUTINES.map(routine => routine.id));
+  const custom = (Array.isArray(routines) ? routines : []).filter(routine => !routine.builtIn && !builtInIds.has(routine.id));
+  return [...DEFAULT_ROUTINES.map(routine => ({ ...routine, exerciseIds: [...routine.exerciseIds] })), ...custom];
+}
 function cardioById(id) { return CARDIO_ACTIVITIES.find(activity => activity.id === id); }
 function exerciseSecondary(exercise) { return [...new Set(exercise?.secondary || SECONDARY_BY_MOVEMENT[exercise?.movement] || [])].filter(group => group !== exercise?.primary); }
 function logSetDetails(log) {
@@ -162,7 +200,7 @@ function loadLogs() {
     state.sessions = Array.isArray(sessions) ? sessions : [];
   } catch { state.sessions = []; }
   try { state.activeWorkout = JSON.parse(localStorage.getItem(accountStorageKey(ACTIVE_WORKOUT_KEY))) || null; } catch { state.activeWorkout = null; }
-  try { const routines = JSON.parse(localStorage.getItem(accountStorageKey(ROUTINES_STORAGE_KEY))); state.routines = Array.isArray(routines) && routines.length ? routines : DEFAULT_ROUTINES.map(routine => ({ ...routine })); } catch { state.routines = DEFAULT_ROUTINES.map(routine => ({ ...routine })); }
+  try { const routines = JSON.parse(localStorage.getItem(accountStorageKey(ROUTINES_STORAGE_KEY))); state.routines = withCurrentBuiltInRoutines(routines); } catch { state.routines = withCurrentBuiltInRoutines(); }
   try { const custom = JSON.parse(localStorage.getItem(accountStorageKey(CUSTOM_EXERCISES_KEY))); state.customExercises = Array.isArray(custom) ? custom : []; } catch { state.customExercises = []; }
   try { state.settings = { ...DEFAULT_SETTINGS, ...(JSON.parse(localStorage.getItem(accountStorageKey(SETTINGS_STORAGE_KEY))) || {}) }; } catch { state.settings = { ...DEFAULT_SETTINGS }; }
   saveRoutines();
@@ -280,7 +318,7 @@ function trainingPayloadForAccount(accountId) {
     version: 4, savedAt: new Date().toISOString(),
     settings: { ...DEFAULT_SETTINGS, ...readAccountValue(SETTINGS_STORAGE_KEY, accountId, {}) },
     customExercises: readAccountValue(CUSTOM_EXERCISES_KEY, accountId, []),
-    routines: Array.isArray(routines) && routines.length ? routines : DEFAULT_ROUTINES.map(routine => ({ ...routine })),
+    routines: withCurrentBuiltInRoutines(routines),
     strengthLogs: readAccountValue(STORAGE_KEY, accountId, []),
     cardioLogs: readAccountValue(CARDIO_STORAGE_KEY, accountId, []),
     workoutSessions: readAccountValue(SESSION_STORAGE_KEY, accountId, []),
@@ -323,7 +361,7 @@ function applyTrainingPayload(payload) {
   state.logs = Array.isArray(payload?.strengthLogs) ? payload.strengthLogs.filter(log => validExerciseIds.has(log.exerciseId)) : [];
   state.cardioLogs = Array.isArray(payload?.cardioLogs) ? payload.cardioLogs.filter(log => cardioById(log.activityId)) : [];
   state.sessions = Array.isArray(payload?.workoutSessions) ? payload.workoutSessions : [];
-  state.routines = Array.isArray(payload?.routines) && payload.routines.length ? payload.routines.map(routine => ({ ...routine, exerciseIds: (routine.exerciseIds || []).filter(id => validExerciseIds.has(id)) })) : DEFAULT_ROUTINES.map(routine => ({ ...routine }));
+  state.routines = withCurrentBuiltInRoutines(payload?.routines).map(routine => ({ ...routine, exerciseIds: (routine.exerciseIds || []).filter(id => validExerciseIds.has(id)) }));
   const settings = payload?.settings || {};
   state.settings = {
     weightUnit: settings.weightUnit === "kg" ? "kg" : "lb",
@@ -544,8 +582,11 @@ function completeTutorial() {
 }
 
 function populateSelects() {
-  const exercises = allExercises();
-  const exerciseOptions = exercises.map(ex => `<option value="${ex.id}">${escapeHTML(ex.name)}</option>`).join("");
+  const exercises = [...allExercises()].sort((a, b) => a.name.localeCompare(b.name));
+  const exerciseOptions = MUSCLE_GROUPS.map(group => {
+    const options = exercises.filter(exercise => exercise.primary === group).map(exercise => `<option value="${exercise.id}">${escapeHTML(exercise.name)}</option>`).join("");
+    return options ? `<optgroup label="${group}">${options}</optgroup>` : "";
+  }).join("");
   const selected = Object.fromEntries(["logExercise", "progressExercise", "liveExercise"].map(id => [id, document.querySelector(`#${id}`)?.value]));
   document.querySelector("#logExercise").innerHTML = exerciseOptions;
   document.querySelector("#progressExercise").innerHTML = exerciseOptions;
@@ -556,12 +597,97 @@ function populateSelects() {
   document.querySelector("#cardioActivity").innerHTML = CARDIO_ACTIVITIES.map(activity => `<option value="${activity.id}">${activity.name}</option>`).join("");
   document.querySelector("#liveExercise").innerHTML = exerciseOptions;
   document.querySelector("#customExercisePrimary").innerHTML = MUSCLE_GROUPS.map(group => `<option>${group}</option>`).join("");
-  document.querySelector("#routineExerciseChoices").innerHTML = exercises.map(exercise => `<label><input type="checkbox" name="routineExercise" value="${exercise.id}" />${escapeHTML(exercise.name)}</label>`).join("");
+  document.querySelector("#routineMuscleFilter").innerHTML = `<option value="all">All muscle groups</option><option value="lower">Lower body</option>${MUSCLE_GROUPS.map(group => `<option value="${group}">${group}</option>`).join("")}`;
+  document.querySelector("#routineExerciseChoices").innerHTML = exercises.map(exercise => `<label data-muscle="${exercise.primary}" data-search="${escapeHTML(`${exercise.name} ${(exercise.aliases || []).join(" ")} ${exercise.primary} ${exercise.equipment} ${exercise.movement}`.toLowerCase())}"><input type="checkbox" name="routineExercise" value="${exercise.id}" /><span><strong>${escapeHTML(exercise.name)}</strong><small>${exercise.primary} · ${escapeHTML(exercise.equipment)}</small></span></label>`).join("");
   document.querySelector("#customExerciseSecondary").innerHTML = MUSCLE_GROUPS.map(group => `<label><input type="checkbox" name="secondaryMuscle" value="${group}" />${group}</label>`).join("");
   ["logExercise", "progressExercise", "liveExercise"].forEach(id => { if (selected[id] && exerciseById(selected[id])) document.querySelector(`#${id}`).value = selected[id]; });
   const firstLoggedExercise = [...state.logs].sort((a, b) => b.date.localeCompare(a.date))[0]?.exerciseId;
   if (firstLoggedExercise) document.querySelector("#progressExercise").value = firstLoggedExercise;
+  document.querySelector("#muscleGroupTotal").textContent = MUSCLE_GROUPS.length;
   renderRoutineOptions();
+}
+
+const EXERCISE_PICKER_FILTERS = [
+  ["recent", "Recent"], ["lower", "Lower body"], ["machine", "Machines"], ["cable", "Cables"],
+  ["dumbbells", "Dumbbells"], ["smith", "Smith"], ["upper", "Upper body"], ["core", "Core"], ["all", "All"]
+];
+
+function recentExerciseIds() {
+  const active = [...(state.activeWorkout?.sets || [])].reverse().map(set => set.exerciseId);
+  const logged = [...state.logs].sort((a, b) => b.date.localeCompare(a.date) || Number(b.createdAt || 0) - Number(a.createdAt || 0)).map(log => log.exerciseId);
+  return [...new Set([...active, ...logged])].slice(0, 10);
+}
+
+function exerciseMatchesPickerFilter(exercise, filter, recentIds) {
+  const equipment = exercise.equipment.toLowerCase();
+  if (filter === "recent") return recentIds.includes(exercise.id);
+  if (filter === "lower") return LOWER_BODY_MUSCLES.includes(exercise.primary);
+  if (filter === "upper") return !LOWER_BODY_MUSCLES.includes(exercise.primary) && exercise.primary !== "Core";
+  if (filter === "core") return exercise.primary === "Core";
+  if (filter === "machine") return equipment.includes("machine") || equipment.includes("leg press");
+  if (filter === "cable") return equipment.includes("cable");
+  if (filter === "dumbbells") return equipment.includes("dumbbell");
+  if (filter === "smith") return equipment.includes("smith");
+  return true;
+}
+
+function openExercisePicker(targetId) {
+  state.exercisePickerTarget = targetId;
+  document.querySelector("#exercisePickerSearch").value = "";
+  if (state.exercisePickerFilter === "recent" && !recentExerciseIds().length) state.exercisePickerFilter = "lower";
+  renderExercisePicker();
+  document.querySelector("#exercisePickerDialog").showModal();
+  setTimeout(() => document.querySelector("#exercisePickerSearch").focus(), 50);
+}
+
+function renderExercisePicker() {
+  const query = document.querySelector("#exercisePickerSearch").value.toLowerCase().trim();
+  const recentIds = recentExerciseIds();
+  const recentRank = new Map(recentIds.map((id, index) => [id, index]));
+  document.querySelector("#exercisePickerFilters").innerHTML = EXERCISE_PICKER_FILTERS
+    .filter(([id]) => id !== "recent" || recentIds.length)
+    .map(([id, label]) => `<button type="button" class="${state.exercisePickerFilter === id ? "active" : ""}" data-picker-filter="${id}">${label}</button>`).join("");
+  const selectedId = document.querySelector(`#${state.exercisePickerTarget}`)?.value;
+  const exercises = allExercises().filter(exercise => {
+    const haystack = `${exercise.name} ${(exercise.aliases || []).join(" ")} ${exercise.primary} ${exercise.equipment} ${exercise.movement} ${exerciseSecondary(exercise).join(" ")}`.toLowerCase();
+    return exerciseMatchesPickerFilter(exercise, state.exercisePickerFilter, recentIds) && haystack.includes(query);
+  }).sort((a, b) => {
+    if (state.exercisePickerFilter === "recent") return (recentRank.get(a.id) ?? 99) - (recentRank.get(b.id) ?? 99);
+    return a.primary.localeCompare(b.primary) || a.name.localeCompare(b.name);
+  });
+  document.querySelector("#exercisePickerResults").innerHTML = exercises.length ? exercises.map(exercise => `<button type="button" class="exercise-picker-result ${exercise.id === selectedId ? "selected" : ""}" data-picker-exercise="${exercise.id}"><span class="exercise-initials">${MUSCLE_ABBR[exercise.primary]}</span><span><strong>${escapeHTML(exercise.name)}</strong><small>${exercise.primary} · ${escapeHTML(exercise.equipment)}</small></span><b>${exercise.id === selectedId ? "Selected" : "Choose"}</b></button>`).join("") : `<div class="empty-state">No exercises match. Try All or a different search.</div>`;
+}
+
+function handleExercisePickerFilter(event) {
+  const button = event.target.closest("[data-picker-filter]"); if (!button) return;
+  state.exercisePickerFilter = button.dataset.pickerFilter;
+  renderExercisePicker();
+}
+
+function handleExercisePickerChoice(event) {
+  const button = event.target.closest("[data-picker-exercise]"); if (!button) return;
+  const select = document.querySelector(`#${state.exercisePickerTarget}`);
+  if (!select || !exerciseById(button.dataset.pickerExercise)) return;
+  select.value = button.dataset.pickerExercise;
+  select.dispatchEvent(new Event("change", { bubbles: true }));
+  document.querySelector("#exercisePickerDialog").close();
+  if (state.exercisePickerTarget === "liveExercise") document.querySelector("#liveWeight").focus();
+}
+
+function filterRoutineExercises() {
+  const query = document.querySelector("#routineExerciseSearch").value.toLowerCase().trim();
+  const filter = document.querySelector("#routineMuscleFilter").value;
+  document.querySelectorAll("#routineExerciseChoices label").forEach(label => {
+    const muscleMatch = filter === "all" || label.dataset.muscle === filter || (filter === "lower" && LOWER_BODY_MUSCLES.includes(label.dataset.muscle));
+    label.hidden = !muscleMatch || !label.dataset.search.includes(query);
+  });
+}
+
+function openRoutineDialog() {
+  document.querySelector("#routineExerciseSearch").value = "";
+  document.querySelector("#routineMuscleFilter").value = "all";
+  filterRoutineExercises();
+  document.querySelector("#routineDialog").showModal();
 }
 
 function bindEvents() {
@@ -573,6 +699,10 @@ function bindEvents() {
   document.querySelector("#previousWeek").addEventListener("click", () => changeWeek(-7));
   document.querySelector("#nextWeek").addEventListener("click", () => changeWeek(7));
   document.querySelector("#logExercise").addEventListener("change", syncExerciseFields);
+  document.querySelectorAll("[data-exercise-picker]").forEach(button => button.addEventListener("click", () => openExercisePicker(button.dataset.exercisePicker)));
+  document.querySelector("#exercisePickerSearch").addEventListener("input", renderExercisePicker);
+  document.querySelector("#exercisePickerFilters").addEventListener("click", handleExercisePickerFilter);
+  document.querySelector("#exercisePickerResults").addEventListener("click", handleExercisePickerChoice);
   ["#logSets", "#logReps", "#logWeight"].forEach(id => document.querySelector(id).addEventListener("input", updateVolumePreview));
   document.querySelector("#workoutForm").addEventListener("submit", saveWorkoutEntry);
   document.querySelector("#cardioForm").addEventListener("submit", saveCardioEntry);
@@ -597,7 +727,8 @@ function bindEvents() {
   document.querySelector("#startRoutineButton").addEventListener("click", startSelectedRoutine);
   document.querySelector("#workoutRoutineSelect").addEventListener("change", renderRoutinePreview);
   document.querySelector("#routinePreview").addEventListener("click", chooseRoutineExercise);
-  document.querySelector("#createRoutineButton").addEventListener("click", () => document.querySelector("#routineDialog").showModal());
+  document.querySelector("#createRoutineButton").addEventListener("click", openRoutineDialog);
+  ["#routineExerciseSearch", "#routineMuscleFilter"].forEach(id => document.querySelector(id).addEventListener("input", filterRoutineExercises));
   document.querySelector("#routineForm").addEventListener("submit", saveRoutineFromDialog);
   document.querySelector("#deleteRoutineButton").addEventListener("click", deleteSelectedRoutine);
   document.querySelector("#restTimerSkip").addEventListener("click", stopRestTimer);
@@ -674,7 +805,7 @@ function renderOverview() {
   const diff = totalSets - previousSets;
   document.querySelector("#setComparison").textContent = previousSets ? `${diff >= 0 ? "+" : ""}${diff} vs. prior week` : "No prior week data";
   document.querySelector("#musclesTrained").textContent = muscles.size;
-  document.querySelector("#muscleCoverageCopy").textContent = muscles.size >= 8 ? "Well-rounded weekly coverage" : `${MUSCLE_GROUPS.length - muscles.size} groups still untrained`;
+  document.querySelector("#muscleCoverageCopy").textContent = muscles.size >= Math.ceil(MUSCLE_GROUPS.length * 0.75) ? "Well-rounded weekly coverage" : `${MUSCLE_GROUPS.length - muscles.size} groups still untrained`;
   document.querySelector("#muscleDots").innerHTML = MUSCLE_GROUPS.map(group => `<i class="${muscles.has(group) ? "active" : ""}" title="${group}"></i>`).join("");
 
   const dailyVolumes = Array.from({ length: 7 }, (_, day) => logs.filter(log => ((parseLocalDate(log.date).getDay() + 6) % 7) === day).reduce((sum, log) => sum + entryVolume(log), 0));
@@ -914,7 +1045,7 @@ function renderRoutinePreview() {
 
 function startSelectedRoutine() {
   const routine = selectedRoutine();
-  if (!routine) { document.querySelector("#routineDialog").showModal(); return; }
+  if (!routine) { openRoutineDialog(); return; }
   if (state.activeWorkout?.sets.length && !confirm("Replace the active workout? Completed unsaved sets will be discarded.")) return;
   createActiveWorkout(routine);
   if (routine.exerciseIds[0]) { document.querySelector("#liveExercise").value = routine.exerciseIds[0]; syncLiveExercise(); }
@@ -1163,7 +1294,7 @@ function renderExercises() {
   const query = document.querySelector("#exerciseSearch").value.toLowerCase().trim();
   const muscle = document.querySelector("#muscleFilter").value;
   const movement = document.querySelector("#movementFilter").value;
-  const filtered = allExercises().filter(ex => (muscle === "all" || ex.primary === muscle || exerciseSecondary(ex).includes(muscle)) && (movement === "all" || ex.movement === movement) && `${ex.name} ${ex.equipment} ${ex.primary} ${exerciseSecondary(ex).join(" ")}`.toLowerCase().includes(query));
+  const filtered = allExercises().filter(ex => (muscle === "all" || ex.primary === muscle || exerciseSecondary(ex).includes(muscle)) && (movement === "all" || ex.movement === movement) && `${ex.name} ${(ex.aliases || []).join(" ")} ${ex.equipment} ${ex.primary} ${exerciseSecondary(ex).join(" ")}`.toLowerCase().includes(query));
   document.querySelector("#exerciseCount").textContent = filtered.length;
   document.querySelector("#exerciseRows").innerHTML = filtered.length ? filtered.map(ex => `<div class="exercise-row">
     <div class="exercise-name"><span class="exercise-initials">${MUSCLE_ABBR[ex.primary]}</span><div><strong>${escapeHTML(ex.name)}</strong><small>${escapeHTML(ex.equipment)}${ex.custom ? " · Custom" : ""}${exerciseSecondary(ex).length ? ` · also ${exerciseSecondary(ex).join(", ")}` : ""}</small></div></div>
@@ -1255,7 +1386,8 @@ async function importBackup(event) {
     state.logs = backup.strengthLogs.filter(log => log && typeof log.date === "string" && validExerciseIds.has(log.exerciseId) && MUSCLE_GROUPS.includes(log.muscle));
     state.cardioLogs = backup.cardioLogs.filter(log => log && typeof log.date === "string" && cardioById(log.activityId));
     state.sessions = Array.isArray(backup.workoutSessions) ? backup.workoutSessions : [];
-    state.routines = Array.isArray(backup.routines) && backup.routines.length ? backup.routines.filter(routine => routine && typeof routine.name === "string" && Array.isArray(routine.exerciseIds)).map(routine => ({ ...routine, exerciseIds: routine.exerciseIds.filter(id => validExerciseIds.has(id)) })) : DEFAULT_ROUTINES.map(routine => ({ ...routine }));
+    const importedRoutines = Array.isArray(backup.routines) ? backup.routines.filter(routine => routine && typeof routine.name === "string" && Array.isArray(routine.exerciseIds)) : [];
+    state.routines = withCurrentBuiltInRoutines(importedRoutines).map(routine => ({ ...routine, exerciseIds: routine.exerciseIds.filter(id => validExerciseIds.has(id)) }));
     const importedSettings = backup.settings || {};
     state.settings = {
       weightUnit: importedSettings.weightUnit === "kg" ? "kg" : "lb",

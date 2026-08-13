@@ -134,7 +134,7 @@
               </article>
               <article class="stat-card">
                 <div class="stat-heading"><span>Muscles trained</span><span class="stat-icon neutral">◎</span></div>
-                <strong><span id="musclesTrained">0</span><small>/10</small></strong>
+                <strong><span id="musclesTrained">0</span><small>/<span id="muscleGroupTotal">11</span></small></strong>
                 <p id="muscleCoverageCopy">Start logging to build coverage</p>
                 <div class="dot-track" id="muscleDots"></div>
               </article>
@@ -186,7 +186,7 @@
                 <div class="form-heading"><span>01</span><div><h2>Session details</h2><p>Required fields are marked with an asterisk.</p></div></div>
                 <div class="form-grid">
                   <label><span>Date *</span><input type="date" id="logDate" required /></label>
-                  <label><span>Exercise *</span><select id="logExercise" required></select></label>
+                  <label><span>Exercise *</span><div class="exercise-select-control"><select id="logExercise" required></select><button type="button" class="exercise-browse-button" data-exercise-picker="logExercise">⌕ Find</button></div></label>
                   <label><span>Target muscle *</span><select id="logMuscle" required></select></label>
                   <label><span>Movement type</span><input id="logMovement" type="text" readonly /></label>
                   <label><span>Sets *</span><input type="number" id="logSets" min="1" max="20" value="3" required /></label>
@@ -263,7 +263,7 @@
 
             <section class="panel routine-launcher">
               <div>
-                <p class="eyebrow">Workout plan</p>
+                <p class="eyebrow">Planet Fitness workout plan</p>
                 <select id="workoutRoutineSelect" aria-label="Choose a workout routine"></select>
               </div>
               <div class="routine-actions">
@@ -285,7 +285,7 @@
                 <h2>Track your next set</h2>
                 <p class="muted-copy">Pick an exercise, enter what you completed, then tap the set button.</p>
                 <div class="live-fields">
-                  <label><span>Exercise</span><select id="liveExercise"></select></label>
+                  <label><span>Exercise</span><div class="exercise-select-control"><select id="liveExercise"></select><button type="button" class="exercise-browse-button" data-exercise-picker="liveExercise">⌕ Find</button></div></label>
                   <div class="previous-performance" id="previousPerformance">No previous sets for this exercise.</div>
                   <div class="live-number-row">
                     <label><span id="liveWeightLabel">Weight (lb)</span><input id="liveWeight" inputmode="decimal" type="number" min="0" step="0.5" value="45" /></label>
@@ -319,6 +319,7 @@
                     <g class="muscle-zone" data-map-muscle="Core"><path d="M138 126 Q160 136 182 126 L181 193 Q160 207 139 193Z"/></g>
                     <g class="muscle-zone" data-map-muscle="Glutes"><path d="M135 190 Q160 178 185 190 L187 218 Q160 231 133 218Z"/></g>
                     <g class="muscle-zone" data-map-muscle="Quads"><path d="M132 200 157 207 153 277 132 274Z"/><path d="M188 200 163 207 167 277 188 274Z"/></g>
+                    <g class="muscle-zone" data-map-muscle="Adductors"><path d="M151 211 158 216 155 274 147 272Z"/><path d="M169 211 162 216 165 274 173 272Z"/></g>
                     <g class="muscle-zone" data-map-muscle="Hamstrings"><path d="M132 277 153 281 150 327 132 327Z"/><path d="M188 277 167 281 170 327 188 327Z"/></g>
                     <g class="muscle-zone" data-map-muscle="Calves"><path d="M132 327 150 330 148 374 135 374Z"/><path d="M188 327 170 330 172 374 185 374Z"/></g>
                   </svg>
@@ -336,7 +337,7 @@
 
           <section class="page" id="exercisesPage" data-page="exercises">
             <div class="page-title-row">
-              <div><p class="eyebrow">Exercise database</p><h1>Find your movement.</h1><p>A curated library organized by primary muscle and movement pattern.</p></div>
+              <div><p class="eyebrow">Planet Fitness exercise database</p><h1>Find your movement.</h1><p>Common Planet Fitness machines, cables, Smith movements, and dumbbell exercises—organized by muscle and movement.</p></div>
               <div class="page-title-actions"><button class="button button-primary" id="newExerciseButton">New exercise</button><div class="count-badge"><strong id="exerciseCount">0</strong><span>movements</span></div></div>
             </div>
             <div class="filter-bar panel">
@@ -420,11 +421,21 @@
       <button data-route-button="log"><span aria-hidden="true"><i class="strength-icon"></i></span><small>Strength</small></button>
       <button data-route-button="progress"><span>↗</span><small>Progress</small></button>
     </nav>
+    <dialog class="app-dialog exercise-picker-dialog" id="exercisePickerDialog">
+      <div class="exercise-picker-shell">
+        <div class="dialog-heading"><div><p class="eyebrow">Planet Fitness library</p><h2>Find an exercise</h2></div><button class="dialog-close" type="button" data-close-dialog="exercisePickerDialog" aria-label="Close">×</button></div>
+        <label class="search-field exercise-picker-search"><span>⌕</span><input id="exercisePickerSearch" type="search" placeholder="Machine, muscle, or exercise…" autocomplete="off" /></label>
+        <div class="exercise-picker-filters" id="exercisePickerFilters" aria-label="Filter exercises"></div>
+        <div class="exercise-picker-results" id="exercisePickerResults"></div>
+        <p class="picker-note">Equipment varies by Planet Fitness location. Add a custom exercise if your club has something different.</p>
+      </div>
+    </dialog>
     <dialog class="app-dialog" id="routineDialog">
       <form method="dialog" id="routineForm">
         <div class="dialog-heading"><div><p class="eyebrow">Workout template</p><h2>Create a routine</h2></div><button class="dialog-close" type="button" data-close-dialog="routineDialog" aria-label="Close">×</button></div>
         <label><span>Routine name</span><input id="routineName" maxlength="40" placeholder="e.g. Upper body" required /></label>
         <p class="field-label">Choose exercises</p>
+        <div class="routine-choice-filters"><label class="search-field"><span>⌕</span><input id="routineExerciseSearch" type="search" placeholder="Search exercises…" /></label><select id="routineMuscleFilter" aria-label="Filter routine exercises by muscle"></select></div>
         <div class="choice-grid" id="routineExerciseChoices"></div>
         <div class="dialog-actions"><button class="button button-outline" type="button" data-close-dialog="routineDialog">Cancel</button><button class="button button-primary" id="saveRoutineButton" type="submit">Save routine</button></div>
       </form>
