@@ -87,8 +87,10 @@
         </div>
 
         <div class="sidebar-footer">
-          <div class="avatar" id="profileAvatar">—</div>
-          <div><strong id="profileName">Your profile</strong><span>Personal training space</span></div>
+          <button class="sidebar-profile-link" id="profileSettingsButton" data-route-button="settings" title="Edit your profile">
+            <span class="avatar" id="profileAvatar">—</span>
+            <span class="sidebar-profile-copy"><strong id="profileName">Your profile</strong><small id="profileFavorite">Personal training space</small></span>
+          </button>
           <button class="icon-button" id="exportButton" title="Export workout data" aria-label="Export workout data">⇩</button>
           <button class="icon-button" id="signOutButton" title="Sign out" aria-label="Sign out">↪</button>
         </div>
@@ -387,6 +389,29 @@
               <div><p class="eyebrow">Preferences & data</p><h1>Make RepRoot yours.</h1><p>Choose training defaults, protect your history, and understand where your data lives.</p></div>
             </div>
             <div class="settings-grid">
+              <form class="panel settings-panel profile-panel" id="profileForm">
+                <div class="panel-heading"><div><p class="eyebrow">Your gym identity</p><h2>Fitness profile</h2></div><span class="profile-spark">✦</span></div>
+                <div class="profile-editor">
+                  <section class="profile-preview" aria-label="Profile preview">
+                    <div class="profile-photo-preview" id="profilePhotoPreview">—</div>
+                    <p class="eyebrow">RepRoot athlete</p>
+                    <h3 id="profilePreviewName">Your name</h3>
+                    <p id="profilePreviewBio">Add a quick bio about what keeps you moving.</p>
+                    <span class="favorite-machine-badge" id="profilePreviewFavorite">☆ Pick a favorite machine</span>
+                  </section>
+                  <div class="profile-fields">
+                    <label><span>Display name</span><input id="profileDisplayName" maxlength="50" autocomplete="name" required /></label>
+                    <label><span>Quick bio <em>optional · 160 characters</em></span><textarea id="profileBio" maxlength="160" rows="4" placeholder="Leg-day regular, chasing consistency, and always up for a gym date…"></textarea><small class="character-count" id="profileBioCount">0 / 160</small></label>
+                    <label><span>Favorite gym machine</span><select id="profileFavoriteMachine"><option value="">Still deciding</option></select></label>
+                    <div class="profile-photo-actions">
+                      <label class="button button-outline profile-photo-button">Choose photo<input id="profilePhotoInput" type="file" accept="image/*" /></label>
+                      <button class="text-button" id="removeProfilePhotoButton" type="button">Remove photo</button>
+                    </div>
+                    <p class="settings-note">Photos are resized before syncing to keep the app fast on your phone.</p>
+                  </div>
+                </div>
+                <button class="button button-primary profile-save-button" type="submit">Save profile</button>
+              </form>
               <form class="panel settings-panel" id="settingsForm">
                 <div class="panel-heading"><div><p class="eyebrow">Training defaults</p><h2>Preferences</h2></div></div>
                 <label><span>Weight unit</span><select id="weightUnit"><option value="lb">Pounds (lb)</option><option value="kg">Kilograms (kg)</option></select></label>

@@ -29,6 +29,8 @@ RepRoot uses Supabase email/password authentication and a row-level-secured trai
 
 Training is cached locally after sign-in, so an interrupted connection does not stop an active workout. Local changes are uploaded when connectivity returns. **Settings & backup** still provides a portable JSON export independent of the cloud provider.
 
+Each private profile can include a display name, short bio, favorite machine, and a square profile photo. Photos are cropped and resized in the browser before being stored in the authenticated snapshot so they remain practical on a phone connection.
+
 The first cloud login checks for a matching legacy on-device account. When the legacy password matches the cloud password, its training is merged into the authenticated snapshot without deleting the original local copy. A JSON export/import remains the fallback for accounts using different passwords.
 
 The built-in library prioritizes the selectorized machines, cable towers, Smith machines, dumbbells, and cardio equipment commonly listed by Planet Fitness. Club inventory varies, so the searchable picker includes equipment filters and custom exercises remain available for location-specific machines.
