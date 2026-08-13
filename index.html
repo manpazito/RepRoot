@@ -56,7 +56,7 @@
             <span class="nav-icon">⌂</span><span>Overview</span>
           </a>
           <a class="nav-item" href="#log" data-route="log">
-            <span class="nav-icon">▰</span><span>Strength</span>
+            <span class="nav-icon" aria-hidden="true"><i class="strength-icon"></i></span><span>Strength</span>
           </a>
           <a class="nav-item" href="#cardio" data-route="cardio">
             <span class="nav-icon">♥</span><span>Cardio</span>
@@ -170,7 +170,7 @@
 
           <section class="page" id="logPage" data-page="log">
             <div class="training-switch" aria-label="Training type">
-              <button class="active" data-route-button="log"><span>▰</span>Strength training</button>
+              <button class="active" data-route-button="log"><span class="strength-icon" aria-hidden="true"></span>Strength training</button>
               <button data-route-button="cardio"><span>♥</span>Cardio</button>
             </div>
             <div class="page-title-row">
@@ -208,7 +208,7 @@
 
           <section class="page" id="cardioPage" data-page="cardio">
             <div class="training-switch" aria-label="Training type">
-              <button data-route-button="log"><span>▰</span>Strength training</button>
+              <button data-route-button="log"><span class="strength-icon" aria-hidden="true"></span>Strength training</button>
               <button class="active" data-route-button="cardio"><span>♥</span>Cardio</button>
             </div>
             <div class="page-title-row cardio-title">
@@ -356,7 +356,7 @@
       <button class="active" data-route-button="overview"><span>⌂</span><small>Home</small></button>
       <button data-route-button="cardio"><span>♥</span><small>Cardio</small></button>
       <button class="workout-tab global-workout-button" data-route-button="workout"><span class="global-workout-icon">▶</span><small class="global-workout-label">Workout</small></button>
-      <button data-route-button="log"><span>▰</span><small>Strength</small></button>
+      <button data-route-button="log"><span aria-hidden="true"><i class="strength-icon"></i></span><small>Strength</small></button>
       <button data-route-button="progress"><span>↗</span><small>Progress</small></button>
     </nav>
     <section class="tutorial-overlay" id="tutorialOverlay" aria-modal="true" role="dialog" aria-labelledby="tutorialTitle" hidden>
