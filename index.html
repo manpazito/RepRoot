@@ -150,9 +150,64 @@
 
             <div class="section-heading dashboard-heading">
               <div>
-                <h2>Muscle balance & recovery</h2>
-                <p>Volume is measured in working sets. Recovery is estimated from your latest session.</p>
+                <h2>Weekly muscle map</h2>
+                <p>Darker hues mean more credited working sets in the selected week.</p>
               </div>
+              <div class="body-heat-legend" aria-label="Weekly muscle volume scale"><span>None</span><i data-level="1"></i><i data-level="2"></i><i data-level="3"></i><i data-level="4"></i><i data-level="5"></i><strong>High</strong></div>
+            </div>
+
+            <article class="panel weekly-body-panel" id="weeklyBodyMap">
+              <div class="body-map-copy">
+                <p class="eyebrow">Training distribution</p>
+                <h3 id="bodyHeatmapTitle">Your week is a clean slate.</h3>
+                <p id="bodyHeatmapCopy">Log working sets and the muscle map will build with every workout.</p>
+                <div class="heatmap-summary" id="heatmapSummary"></div>
+              </div>
+              <div class="body-view-pair">
+                <figure class="body-view">
+                  <svg class="anatomy-map" viewBox="0 0 180 390" role="img" aria-labelledby="frontBodyTitle frontBodyDesc">
+                    <title id="frontBodyTitle">Front weekly muscle heatmap</title>
+                    <desc id="frontBodyDesc">Front view of muscle groups colored by credited working sets for the selected week.</desc>
+                    <g class="anatomy-silhouette" aria-hidden="true">
+                      <ellipse cx="90" cy="31" rx="20" ry="25" />
+                      <path d="M78 53 Q82 63 74 69 L57 73 Q46 77 43 92 L35 151 45 154 61 103 65 180 Q67 199 60 221 L55 304 68 306 76 224 86 205 94 205 104 224 112 306 125 304 120 221 Q113 199 115 180 L119 103 135 154 145 151 137 92 Q134 77 123 73 L106 69 Q98 63 102 53Z" />
+                      <path d="M35 153 31 202 39 205 47 156ZM145 153 149 202 141 205 133 156ZM31 204 28 221 38 225 40 207ZM149 204 152 221 142 225 140 207ZM55 306 57 368 68 368 69 308ZM125 306 123 368 112 368 111 308ZM57 368 52 381 68 381 68 370ZM123 368 128 381 112 381 112 370Z" />
+                    </g>
+                    <g class="overview-muscle-zone" data-week-muscle="Shoulders" tabindex="0" role="img"><title>Shoulders</title><path d="M73 69 Q58 68 49 79 Q44 86 45 97 55 89 63 92 L73 82Z"/><path d="M107 69 Q122 68 131 79 Q136 86 135 97 125 89 117 92 L107 82Z"/></g>
+                    <g class="overview-muscle-zone" data-week-muscle="Chest" tabindex="0" role="img"><title>Chest</title><path d="M76 76 Q88 70 89 84 L88 115 Q75 120 63 108 L64 88Z"/><path d="M104 76 Q92 70 91 84 L92 115 Q105 120 117 108 L116 88Z"/></g>
+                    <g class="overview-muscle-zone" data-week-muscle="Biceps" tabindex="0" role="img"><title>Biceps</title><path d="M51 97 Q60 92 64 101 L56 139 Q52 148 45 142Z"/><path d="M129 97 Q120 92 116 101 L124 139 Q128 148 135 142Z"/></g>
+                    <g class="overview-muscle-zone" data-week-muscle="Core" tabindex="0" role="img"><title>Core</title><path d="M73 120 Q90 127 107 120 L105 174 Q99 192 90 198 81 192 75 174Z"/><path class="muscle-seam" d="M90 127V190M77 144H103M76 163H104"/></g>
+                    <g class="overview-muscle-zone" data-week-muscle="Adductors" tabindex="0" role="img"><title>Adductors</title><path d="M80 205 88 210 85 282 72 273Z"/><path d="M100 205 92 210 95 282 108 273Z"/></g>
+                    <g class="overview-muscle-zone" data-week-muscle="Quads" tabindex="0" role="img"><title>Quadriceps</title><path d="M65 202 Q76 199 85 207 L81 284 Q72 299 60 288 L62 229Z"/><path d="M115 202 Q104 199 95 207 L99 284 Q108 299 120 288 L118 229Z"/><path class="muscle-seam" d="M68 214 65 279M112 214 115 279"/></g>
+                    <g class="overview-muscle-zone" data-week-muscle="Calves" tabindex="0" role="img"><title>Calves</title><path d="M60 310 Q68 304 72 317 L68 357 59 362 57 329Z"/><path d="M120 310 Q112 304 108 317 L112 357 121 362 123 329Z"/></g>
+                    <g class="anatomy-lines" aria-hidden="true"><path d="M73 69Q90 77 107 69M65 180Q90 189 115 180M59 303Q65 309 71 303M109 303Q115 309 121 303"/></g>
+                  </svg>
+                  <figcaption>Front</figcaption>
+                </figure>
+                <figure class="body-view">
+                  <svg class="anatomy-map" viewBox="0 0 180 390" role="img" aria-labelledby="backBodyTitle backBodyDesc">
+                    <title id="backBodyTitle">Back weekly muscle heatmap</title>
+                    <desc id="backBodyDesc">Back view of muscle groups colored by credited working sets for the selected week.</desc>
+                    <g class="anatomy-silhouette" aria-hidden="true">
+                      <ellipse cx="90" cy="31" rx="20" ry="25" />
+                      <path d="M78 53 Q82 63 74 69 L57 73 Q46 77 43 92 L35 151 45 154 61 103 65 180 Q67 199 60 221 L55 304 68 306 76 224 86 205 94 205 104 224 112 306 125 304 120 221 Q113 199 115 180 L119 103 135 154 145 151 137 92 Q134 77 123 73 L106 69 Q98 63 102 53Z" />
+                      <path d="M35 153 31 202 39 205 47 156ZM145 153 149 202 141 205 133 156ZM31 204 28 221 38 225 40 207ZM149 204 152 221 142 225 140 207ZM55 306 57 368 68 368 69 308ZM125 306 123 368 112 368 111 308ZM57 368 52 381 68 381 68 370ZM123 368 128 381 112 381 112 370Z" />
+                    </g>
+                    <g class="overview-muscle-zone" data-week-muscle="Shoulders" tabindex="0" role="img"><title>Shoulders</title><path d="M73 69 Q58 68 49 79 Q44 86 45 97 55 89 64 92 L76 81Z"/><path d="M107 69 Q122 68 131 79 Q136 86 135 97 125 89 116 92 L104 81Z"/></g>
+                    <g class="overview-muscle-zone" data-week-muscle="Back" tabindex="0" role="img"><title>Back</title><path d="M78 65 90 76 102 65 116 87 110 143 101 176 90 185 79 176 70 143 64 87Z"/><path class="muscle-seam" d="M90 78V180M68 94Q90 107 112 94M72 126Q90 137 108 126"/></g>
+                    <g class="overview-muscle-zone" data-week-muscle="Triceps" tabindex="0" role="img"><title>Triceps</title><path d="M49 96 Q59 90 64 101 L56 142 Q50 151 44 141Z"/><path d="M131 96 Q121 90 116 101 L124 142 Q130 151 136 141Z"/></g>
+                    <g class="overview-muscle-zone" data-week-muscle="Glutes" tabindex="0" role="img"><title>Glutes</title><path d="M64 181 Q77 175 89 187 L88 217 Q75 229 61 216Z"/><path d="M116 181 Q103 175 91 187 L92 217 Q105 229 119 216Z"/></g>
+                    <g class="overview-muscle-zone" data-week-muscle="Hamstrings" tabindex="0" role="img"><title>Hamstrings</title><path d="M62 221 Q75 216 86 221 L81 286 Q70 298 59 287Z"/><path d="M118 221 Q105 216 94 221 L99 286 Q110 298 121 287Z"/><path class="muscle-seam" d="M68 226 64 279M112 226 116 279"/></g>
+                    <g class="overview-muscle-zone" data-week-muscle="Calves" tabindex="0" role="img"><title>Calves</title><path d="M59 310 Q68 300 73 317 L68 356 60 363 56 334Z"/><path d="M121 310 Q112 300 107 317 L112 356 120 363 124 334Z"/></g>
+                    <g class="anatomy-lines" aria-hidden="true"><path d="M77 54Q90 63 103 54M65 180Q90 190 115 180M59 303Q65 309 71 303M109 303Q115 309 121 303"/></g>
+                  </svg>
+                  <figcaption>Back</figcaption>
+                </figure>
+              </div>
+            </article>
+
+            <div class="section-heading muscle-detail-heading">
+              <div><h2>Muscle details & recovery</h2><p>Primary muscles receive full set credit; secondary muscles receive half credit.</p></div>
               <div class="legend"><span><i class="ready"></i>Likely ready</span><span><i class="soon"></i>May be recovering</span><span><i class="rest"></i>Recently trained</span></div>
             </div>
             <div class="muscle-grid" id="muscleGrid"></div>

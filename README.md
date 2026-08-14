@@ -46,6 +46,8 @@ The built-in library prioritizes the selectorized machines, cable towers, Smith 
 
 Secondary muscles receive half-set credit on the weekly overview; the primary muscle receives full credit. Progress is compared with estimated 1RM using the Epley formula. These estimates are training context, not medical or readiness diagnoses.
 
+The original RepRoot weekly body illustration uses front/back anatomy and accessible intensity-map patterns researched against [Body Muscles](https://github.com/vulovix/body-muscles) (Apache 2.0) and the [OpenStax-derived muscular-system reference on Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Muscles_front_and_back.svg) (CC BY-SA 4.0). No third-party artwork or code is bundled in RepRoot.
+
 ## Data model
 
 - `StrengthLog` retains legacy summary fields and adds `setDetails[]` with weight, reps, RIR, set type, and completion time.
