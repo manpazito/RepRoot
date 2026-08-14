@@ -46,6 +46,7 @@ const EXERCISES = [
   { id: "chest-supported-row", name: "Chest-Supported Machine Row", primary: "Back", movement: "Horizontal pull", equipment: "Machine" },
   { id: "straight-arm-pulldown", name: "Straight-Arm Cable Pulldown", primary: "Back", movement: "Shoulder extension", equipment: "Cable" },
   { id: "one-arm-db-row", name: "One-Arm Dumbbell Row", primary: "Back", movement: "Horizontal pull", equipment: "Dumbbells" },
+  { id: "back-extension-machine", name: "Back Extension", primary: "Back", movement: "Spinal extension", equipment: "Machine", aliases: ["Lower Back Extension", "Hyperextension"], secondary: ["Glutes", "Hamstrings"] },
   { id: "back-squat", name: "Barbell Back Squat", primary: "Quads", movement: "Squat", equipment: "Barbell" },
   { id: "leg-press", name: "Leg Press", primary: "Quads", movement: "Squat", equipment: "Machine" },
   { id: "bulgarian-split", name: "Bulgarian Split Squat", primary: "Quads", movement: "Unilateral squat", equipment: "Dumbbells" },
@@ -121,7 +122,7 @@ const SECONDARY_BY_MOVEMENT = {
 const DEFAULT_ROUTINES = [
   { id: "routine-pf-machine-legs", name: "PF Machine Legs", exerciseIds: ["leg-press", "leg-extension", "seated-leg-curl", "hip-adduction-machine", "hip-abduction-machine", "calf-extension-machine"], builtIn: true },
   { id: "routine-pf-push", name: "PF Machine Push", exerciseIds: ["machine-chest-press", "pec-deck", "machine-shoulder-press", "cable-lateral-raise", "rope-pushdown"], builtIn: true },
-  { id: "routine-pf-pull", name: "PF Machine Pull", exerciseIds: ["lat-pulldown", "machine-row", "machine-high-row", "reverse-fly", "machine-curl"], builtIn: true },
+  { id: "routine-pf-pull", name: "PF Machine Pull", exerciseIds: ["lat-pulldown", "machine-row", "machine-high-row", "back-extension-machine", "reverse-fly", "machine-curl"], builtIn: true },
   { id: "routine-pf-full-body", name: "PF Machine Full Body", exerciseIds: ["leg-press", "machine-chest-press", "lat-pulldown", "seated-leg-curl", "machine-shoulder-press", "ab-crunch-machine"], builtIn: true },
   { id: "routine-pf-glutes", name: "PF Glutes & Hamstrings", exerciseIds: ["smith-rdl", "glute-drive-machine", "seated-leg-curl", "hip-abduction-machine", "cable-kickback", "calf-extension-machine"], builtIn: true },
   { id: "routine-pf-smith-upper", name: "PF Smith & Dumbbell Upper", exerciseIds: ["smith-incline-press", "one-arm-db-row", "dumbbell-bench-press", "lat-pulldown", "lateral-raise", "overhead-cable-extension"], builtIn: true }
@@ -245,6 +246,7 @@ async function init() {
   // Remove the original unscoped demo store. All current data is account-scoped.
   [STORAGE_KEY, CARDIO_STORAGE_KEY, SESSION_STORAGE_KEY, ACTIVE_WORKOUT_KEY, ROUTINES_STORAGE_KEY, CUSTOM_EXERCISES_KEY, SETTINGS_STORAGE_KEY].forEach(key => localStorage.removeItem(key));
   populateSelects();
+  setupWorkoutBodyMap();
   bindEvents();
   document.querySelector("#logDate").value = toISODate(new Date());
   document.querySelector("#cardioDate").value = toISODate(new Date());
@@ -897,6 +899,33 @@ function renderWeeklyBodyMap(logs) {
     : `<span>No working sets yet</span>`;
 }
 
+function setupWorkoutBodyMap() {
+  const source = document.querySelector("#weeklyBodyMap .body-view-pair");
+  const target = document.querySelector("#liveBodyMap");
+  if (!source || !target) return;
+  const map = source.cloneNode(true);
+  map.classList.add("live-body-view-pair");
+  map.querySelectorAll("svg").forEach((svg, index) => {
+    svg.removeAttribute("aria-labelledby");
+    svg.setAttribute("aria-label", `${index ? "Back" : "Front"} muscle intensity for the current workout`);
+  });
+  map.querySelectorAll("[id]").forEach(element => element.removeAttribute("id"));
+  map.querySelectorAll("[data-week-muscle]").forEach(zone => {
+    zone.dataset.mapMuscle = zone.dataset.weekMuscle;
+    delete zone.dataset.weekMuscle;
+  });
+  target.replaceChildren(map);
+}
+
+function workoutHeatLevel(sets) {
+  if (!sets) return 0;
+  if (sets < 2) return 1;
+  if (sets < 3) return 2;
+  if (sets < 5) return 3;
+  if (sets < 8) return 4;
+  return 5;
+}
+
 function recoveryFor(group, weeklySets) {
   const latest = state.logs.filter(log => muscleCredit(log, group) > 0).sort((a, b) => (b.createdAt || parseLocalDate(b.date)) - (a.createdAt || parseLocalDate(a.date)))[0];
   if (!latest) return { type: "ready", label: "Likely ready", detail: "No recent work" };
@@ -1428,9 +1457,12 @@ function renderWorkoutMode() {
   document.querySelector("#workoutSetCount").textContent = `${workingSets.length} working set${workingSets.length === 1 ? "" : "s"}`;
   document.querySelector("#topWorkoutLabel").textContent = workout ? "Resume workout" : "Open workout";
   document.querySelectorAll("[data-map-muscle]").forEach(zone => {
-    zone.classList.remove("heat-1", "heat-2", "heat-3", "heat-4");
     const count = counts[zone.dataset.mapMuscle];
-    if (count) zone.classList.add(`heat-${count >= 8 ? 4 : count >= 5 ? 3 : count >= 2.5 ? 2 : 1}`);
+    const formattedCount = Number(count.toFixed(1));
+    const label = `${zone.dataset.mapMuscle}: ${formattedCount} credited set${formattedCount === 1 ? "" : "s"} this workout`;
+    zone.dataset.level = workoutHeatLevel(count);
+    zone.setAttribute("aria-label", label);
+    zone.querySelector("title").textContent = label;
   });
   document.querySelector("#liveMuscleList").innerHTML = MUSCLE_GROUPS.map(group => `<span class="live-muscle-chip ${counts[group] ? "active" : ""}">${group}${counts[group] ? ` · ${Number(counts[group].toFixed(1))}` : ""}</span>`).join("");
   document.querySelector("#sessionFeed").innerHTML = sets.length ? [...sets].reverse().map((set, reverseIndex) => { const exercise = exerciseById(set.exerciseId); return `<div class="feed-row"><span class="feed-number">${sets.length-reverseIndex}</span><div><h3>${escapeHTML(exercise?.name || "Exercise")}</h3><p>${set.type === "warmup" ? "Warm-up" : `${set.rir ?? "—"} RIR`} · ${new Date(set.completedAt).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })}</p></div><strong>${formatWeight(set.weight)} × ${set.reps}</strong></div>`; }).join("") : `<div class="empty-state">Your completed sets will appear here.</div>`;
