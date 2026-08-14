@@ -366,21 +366,8 @@
               <section class="panel muscle-map-panel">
                 <div class="panel-heading"><div><p class="eyebrow">Live muscle map</p><h2>Target intensity</h2></div><strong id="workoutSetCount">0 sets</strong></div>
                 <div class="muscle-map-wrap">
-                  <svg class="body-map" viewBox="0 0 320 390" role="img" aria-label="Muscle groups worked this session">
-                    <g class="body-outline"><circle cx="160" cy="36" r="24"/><path d="M130 67 Q160 55 190 67 L207 168 190 224 188 350 164 350 160 232 156 350 132 350 130 224 113 168Z"/><path d="M128 78 104 91 78 185 96 191 128 119M192 78 216 91 242 185 224 191 192 119"/></g>
-                    <g class="muscle-zone" data-map-muscle="Shoulders"><ellipse cx="125" cy="82" rx="22" ry="15"/><ellipse cx="195" cy="82" rx="22" ry="15"/></g>
-                    <g class="muscle-zone" data-map-muscle="Chest"><path d="M134 86 Q159 77 158 118 Q136 122 129 105Z"/><path d="M186 86 Q161 77 162 118 Q184 122 191 105Z"/></g>
-                    <g class="muscle-zone" data-map-muscle="Back"><path d="M132 120 Q160 137 188 120 L184 166 Q160 177 136 166Z"/></g>
-                    <g class="muscle-zone" data-map-muscle="Biceps"><path d="M106 102 Q117 100 121 114 L107 154 96 150Z"/><path d="M214 102 Q203 100 199 114 L213 154 224 150Z"/></g>
-                    <g class="muscle-zone" data-map-muscle="Triceps"><path d="M99 151 110 155 99 184 86 181Z"/><path d="M221 151 210 155 221 184 234 181Z"/></g>
-                    <g class="muscle-zone" data-map-muscle="Core"><path d="M138 126 Q160 136 182 126 L181 193 Q160 207 139 193Z"/></g>
-                    <g class="muscle-zone" data-map-muscle="Glutes"><path d="M135 190 Q160 178 185 190 L187 218 Q160 231 133 218Z"/></g>
-                    <g class="muscle-zone" data-map-muscle="Quads"><path d="M132 200 157 207 153 277 132 274Z"/><path d="M188 200 163 207 167 277 188 274Z"/></g>
-                    <g class="muscle-zone" data-map-muscle="Adductors"><path d="M151 211 158 216 155 274 147 272Z"/><path d="M169 211 162 216 165 274 173 272Z"/></g>
-                    <g class="muscle-zone" data-map-muscle="Hamstrings"><path d="M132 277 153 281 150 327 132 327Z"/><path d="M188 277 167 281 170 327 188 327Z"/></g>
-                    <g class="muscle-zone" data-map-muscle="Calves"><path d="M132 327 150 330 148 374 135 374Z"/><path d="M188 327 170 330 172 374 185 374Z"/></g>
-                  </svg>
-                  <div class="heat-legend"><span>Targeted</span><i></i><i></i><i></i><i></i><strong>High volume</strong></div>
+                  <div class="live-body-map" id="liveBodyMap"></div>
+                  <div class="body-heat-legend live-heat-legend" aria-label="Current workout muscle intensity scale"><span>Targeted</span><i data-level="1"></i><i data-level="2"></i><i data-level="3"></i><i data-level="4"></i><i data-level="5"></i><strong>High</strong></div>
                 </div>
                 <div class="live-muscle-list" id="liveMuscleList"></div>
               </section>
